@@ -25,7 +25,17 @@ from . import enums
 from . import util
 
 
-from typing import Any, BinaryIO, Dict, List, Optional, Type, TYPE_CHECKING, Union  # NOQA
+from typing import (
+    Any,
+    BinaryIO,
+    Dict,
+    List,
+    Optional,
+    Type,
+    TYPE_CHECKING,
+    Union,
+)  # NOQA
+
 if TYPE_CHECKING:
     from . import core  # NOQA
 
@@ -34,17 +44,16 @@ class _ImageResourceBlockMeta(type):
     """
     A metaclass that builds a mapping of subclasses.
     """
+
     mapping = {}  # type: Dict[int, Type[ImageResourceBlock]]
 
     def __new__(cls, name, parents, dct):
         new_cls = type.__new__(cls, name, parents, dct)
 
-        if '_resource_id' in dct and isinstance(dct['_resource_id'], int):
-            resource_id = dct['_resource_id']
+        if "_resource_id" in dct and isinstance(dct["_resource_id"], int):
+            resource_id = dct["_resource_id"]
             if resource_id in cls.mapping:
-                raise ValueError(
-                    "Duplicate resource_id '{}'".format(
-                        resource_id))
+                raise ValueError("Duplicate resource_id '{}'".format(resource_id))
             cls.mapping[resource_id] = new_cls
 
         return new_cls
@@ -58,6 +67,7 @@ class ImageResourceBlock(object):
     ``pytoshop`` currently doesn't deeply parse image resource
     blocks.  The raw data is merely retained for round-tripping.
     """
+
     _resource_id = -1
 
     @property
@@ -68,10 +78,9 @@ class ImageResourceBlock(object):
     @name.setter
     def name(self, value):  # type: (Union[bytes, unicode]) -> None
         if isinstance(value, bytes):
-            value = value.decode('ascii')
+            value = value.decode("ascii")
 
-        if (not isinstance(value, six.text_type) or
-                len(value) > 255):
+        if not isinstance(value, six.text_type) or len(value) > 255:
             raise ValueError("name must be unicode string of length < 255")
         self._name = value
 
@@ -82,18 +91,16 @@ class ImageResourceBlock(object):
 
     def length(self, header):  # type: (core.Header) -> int
         data_length = self.data_length(header)
-        length = (
-            4 + 2 +
-            util.pascal_string_length(self.name, 2) +
-            4 + data_length
-        )
+        length = 4 + 2 + util.pascal_string_length(self.name, 2) + 4 + data_length
         if data_length % 2 != 0:
             length += 1
         return length
+
     length.__doc__ = docs.length  # type: ignore
 
     def total_length(self, header):  # type: (core.Header) -> int
         return self.length(header)
+
     total_length.__doc__ = docs.total_length  # type: ignore
 
     def data_length(self, header):  # type: (core.Header) -> int
@@ -104,21 +111,21 @@ class ImageResourceBlock(object):
     def read(cls, fd, header):
         # type: (BinaryIO, core.Header) -> ImageResourceBlock
         signature = fd.read(4)
-        if signature != b'8BIM':
-            raise ValueError('Invalid image resource block signature')
+        if signature != b"8BIM":
+            raise ValueError("Invalid image resource block signature")
 
-        resource_id = util.read_value(fd, 'H')
+        resource_id = util.read_value(fd, "H")
         name = util.read_pascal_string(fd, 2)
 
-        data_length = util.read_value(fd, 'I')
+        data_length = util.read_value(fd, "I")
 
         util.log(
-            "resource_id: {}, name: {}, data_length: {}",
-            resource_id, name, data_length
+            "resource_id: {}, name: {}, data_length: {}", resource_id, name, data_length
         )
 
         new_cls = _ImageResourceBlockMeta.mapping.get(
-            resource_id, GenericImageResourceBlock)
+            resource_id, GenericImageResourceBlock
+        )
         start = fd.tell()
         result = new_cls.read_data(fd, resource_id, name, data_length, header)
         end = fd.tell()
@@ -129,34 +136,36 @@ class ImageResourceBlock(object):
             fd.read(1)
 
         return result
+
     read.__func__.__doc__ = docs.read  # type: ignore
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  data_length,  # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        data_length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
         raise NotImplementedError()
 
     @util.trace_write
     def write(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
-        fd.write(b'8BIM')
-        util.write_value(fd, 'H', self.resource_id)
+        fd.write(b"8BIM")
+        util.write_value(fd, "H", self.resource_id)
         util.write_pascal_string(fd, self.name, 2)
         length = self.data_length(header)
-        util.write_value(fd, 'I', length)
+        util.write_value(fd, "I", length)
         start = fd.tell()
         self.write_data(fd, header)
         end = fd.tell()
         if end - start != length:
-            raise ValueError(
-                "{} wrote the wrong amount".format(self.__class__))
+            raise ValueError("{} wrote the wrong amount".format(self.__class__))
         if length % 2 != 0:
-            fd.write(b'\0')
+            fd.write(b"\0")
+
     write.__doc__ = docs.write  # test: ignore
 
     def write_data(self, fd, header):
@@ -165,7 +174,7 @@ class ImageResourceBlock(object):
 
 
 class GenericImageResourceBlock(ImageResourceBlock):
-    def __init__(self, name='', resource_id=0, data=b''):
+    def __init__(self, name="", resource_id=0, data=b""):
         self.name = name
         self.resource_id = resource_id
         self.data = data
@@ -177,11 +186,8 @@ class GenericImageResourceBlock(ImageResourceBlock):
 
     @resource_id.setter
     def resource_id(self, value):  # type: (int) -> None
-        if (not isinstance(value, int) or
-                value < 0 or value > (1 << 16)):
-            raise ValueError(
-                "resource_id must be a 16-bit positive integer"
-            )
+        if not isinstance(value, int) or value < 0 or value > (1 << 16):
+            raise ValueError("resource_id must be a 16-bit positive integer")
         self._resource_id = value
 
     @property
@@ -191,19 +197,19 @@ class GenericImageResourceBlock(ImageResourceBlock):
 
     @data.setter
     def data(self, value):  # type: (bytes) -> None
-        if (not isinstance(value, bytes) or
-                len(value) > (1 << 32)):
+        if not isinstance(value, bytes) or len(value) > (1 << 32):
             raise ValueError("data must be a byte string")
         self._data = value
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
         data = fd.read(length)
         return cls(resource_id=resource_id, name=name, data=data)
 
@@ -216,10 +222,11 @@ class GenericImageResourceBlock(ImageResourceBlock):
 
 
 class ImageResourceUnicodeString(ImageResourceBlock):
-    def __init__(self,
-                 name='',  # type: unicode
-                 value=''  # type: unicode
-                 ):  # type: (...) -> None
+    def __init__(
+        self,
+        name="",  # type: unicode
+        value="",  # type: unicode
+    ):  # type: (...) -> None
         self.name = name
         self.value = value
 
@@ -229,24 +236,22 @@ class ImageResourceUnicodeString(ImageResourceBlock):
 
     @value.setter
     def value(self, value):  # type: (unicode) -> None
-        if (not isinstance(value, six.text_type) or
-                len(value) > (1 << 32)):
+        if not isinstance(value, six.text_type) or len(value) > (1 << 32):
             raise TypeError("value must be a unicode string")
         self._value = value
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
         data = fd.read(length)
         value = util.decode_unicode_string(data)
-        return cls(
-            name=name, value=value
-        )
+        return cls(name=name, value=value)
 
     def data_length(self, header):  # type: (core.Header) -> int
         return util.unicode_string_length(self.value)
@@ -262,10 +267,12 @@ class LayersGroupInfo(ImageResourceBlock):
 
     Indicates which layers are locked together.
     """
-    def __init__(self,
-                 name='',      # type: unicode
-                 group_ids=[]  # type: List[int]
-                 ):  # type: (...) -> None
+
+    def __init__(
+        self,
+        name="",  # type: unicode
+        group_ids=[],  # type: List[int]
+    ):  # type: (...) -> None
         self.name = name
         self.group_ids = group_ids
 
@@ -281,15 +288,16 @@ class LayersGroupInfo(ImageResourceBlock):
         self._group_ids = value
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
         data = fd.read(length)
-        group_ids = np.frombuffer(data, '>u2').tolist()
+        group_ids = np.frombuffer(data, ">u2").tolist()
         return cls(name=name, group_ids=group_ids)
 
     def data_length(self, header):  # type: (core.Header) -> int
@@ -297,7 +305,7 @@ class LayersGroupInfo(ImageResourceBlock):
 
     def write_data(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
-        data = np.array(self.group_ids, '>u2').tobytes()
+        data = np.array(self.group_ids, ">u2").tobytes()
         fd.write(data)
 
 
@@ -305,12 +313,14 @@ class BorderInfo(ImageResourceBlock):
     """
     Border information.
     """
-    def __init__(self,
-                 name='',                 # type: unicode
-                 border_width_num=0,      # type: int
-                 border_width_den=1,      # type: int
-                 unit=enums.Units.inches  # type: int
-                 ):  # type: (...) -> None
+
+    def __init__(
+        self,
+        name="",  # type: unicode
+        border_width_num=0,  # type: int
+        border_width_den=1,  # type: int
+        unit=enums.Units.inches,  # type: int
+    ):  # type: (...) -> None
         self.name = name
         self.border_width_num = border_width_num
         self.border_width_den = border_width_den
@@ -325,11 +335,8 @@ class BorderInfo(ImageResourceBlock):
 
     @border_width_num.setter
     def border_width_num(self, value):  # type: (int) -> None
-        if (not isinstance(value, int) or
-                value < 0 or value > 65535):
-            raise ValueError(
-                "border_width_num must be integer in range 0-65535"
-            )
+        if not isinstance(value, int) or value < 0 or value > 65535:
+            raise ValueError("border_width_num must be integer in range 0-65535")
         self._border_width_num = value
 
     @property
@@ -339,11 +346,8 @@ class BorderInfo(ImageResourceBlock):
 
     @border_width_den.setter
     def border_width_den(self, value):  # type: (int) -> None
-        if (not isinstance(value, int) or
-                value < 1 or value > 65535):
-            raise ValueError(
-                "border_width_den must be integer in range 1-65535"
-            )
+        if not isinstance(value, int) or value < 1 or value > 65535:
+            raise ValueError("border_width_den must be integer in range 1-65535")
         self._border_width_den = value
 
     @property
@@ -358,17 +362,16 @@ class BorderInfo(ImageResourceBlock):
         self._unit = value
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
-        num, den, unit = util.read_value(fd, 'HHH')
-        return cls(
-            name=name, border_width_num=num, border_width_den=den,
-            unit=unit)
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
+        num, den, unit = util.read_value(fd, "HHH")
+        return cls(name=name, border_width_num=num, border_width_den=den, unit=unit)
 
     def data_length(self, header):  # type: (core.Header) -> int
         return 6
@@ -376,8 +379,7 @@ class BorderInfo(ImageResourceBlock):
     def write_data(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
         util.write_value(
-            fd, 'HHH', self.border_width_num,
-            self.border_width_den, self.unit
+            fd, "HHH", self.border_width_num, self.border_width_den, self.unit
         )
 
 
@@ -385,11 +387,13 @@ class BackgroundColor(ImageResourceBlock):
     """
     Background color.
     """
-    def __init__(self,
-                 name='',                           # type: unicode
-                 color_space=enums.ColorSpace.rgb,  # type: int
-                 color=[]                           # type: List[int]
-                 ):  # type: (...) -> None
+
+    def __init__(
+        self,
+        name="",  # type: unicode
+        color_space=enums.ColorSpace.rgb,  # type: int
+        color=[],  # type: List[int]
+    ):  # type: (...) -> None
         self.name = name
         self.color_space = color_space
         self.color = color
@@ -424,20 +428,19 @@ class BackgroundColor(ImageResourceBlock):
         self._color = value
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
-        space_id, a, b, c, d = util.read_value(fd, 'HHHHH')
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
+        space_id, a, b, c, d = util.read_value(fd, "HHHHH")
         if space_id == enums.ColorSpace.lab:
             b -= 32767
             c -= 32767
-        return cls(
-            name=name, color_space=space_id, color=[a, b, c, d]
-        )
+        return cls(name=name, color_space=space_id, color=[a, b, c, d])
 
     def data_length(self, header):  # type: (core.Header) -> int
         return 10
@@ -450,27 +453,27 @@ class BackgroundColor(ImageResourceBlock):
         if self.color_space == enums.ColorSpace.lab:
             b += 32767
             c += 32767
-        util.write_value(
-            fd, 'HHHHH', self.color_space, a, b, c, d
-        )
+        util.write_value(fd, "HHHHH", self.color_space, a, b, c, d)
 
 
 class PrintFlags(ImageResourceBlock):
     """
     Print flags.
     """
-    def __init__(self,
-                 name='',                   # type: unicode
-                 labels=False,              # type: bool
-                 crop_marks=False,          # type: bool
-                 color_bars=False,          # type: bool
-                 registration_marks=False,  # type: bool
-                 negative=False,            # type: bool
-                 flip=False,                # type: bool
-                 interpolate=False,         # type: bool
-                 caption=False,             # type: bool
-                 print_flags=False          # type: bool
-                 ):  # type: (...) -> None
+
+    def __init__(
+        self,
+        name="",  # type: unicode
+        labels=False,  # type: bool
+        crop_marks=False,  # type: bool
+        color_bars=False,  # type: bool
+        registration_marks=False,  # type: bool
+        negative=False,  # type: bool
+        flip=False,  # type: bool
+        interpolate=False,  # type: bool
+        caption=False,  # type: bool
+        print_flags=False,  # type: bool
+    ):  # type: (...) -> None
         self.name = name
         self.labels = labels
         self.crop_marks = crop_marks
@@ -566,20 +569,27 @@ class PrintFlags(ImageResourceBlock):
         self._print_flags = bool(value)
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
-        vals = util.read_value(fd, 'BBBBBBBBB')
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
+        vals = util.read_value(fd, "BBBBBBBBB")
         vals = [bool(x) for x in vals]
         return cls(
-            name=name, labels=vals[0], crop_marks=vals[1],
-            color_bars=vals[2], registration_marks=vals[3],
-            negative=vals[4], flip=vals[5], interpolate=vals[6],
-            caption=vals[7], print_flags=vals[8]
+            name=name,
+            labels=vals[0],
+            crop_marks=vals[1],
+            color_bars=vals[2],
+            registration_marks=vals[3],
+            negative=vals[4],
+            flip=vals[5],
+            interpolate=vals[6],
+            caption=vals[7],
+            print_flags=vals[8],
         )
 
     def data_length(self, header):  # type: (core.Header) -> int
@@ -588,19 +598,26 @@ class PrintFlags(ImageResourceBlock):
     def write_data(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
         vals = [
-            self.labels, self.crop_marks, self.color_bars,
-            self.registration_marks, self.negative, self.flip,
-            self.interpolate, self.caption, self.print_flags
+            self.labels,
+            self.crop_marks,
+            self.color_bars,
+            self.registration_marks,
+            self.negative,
+            self.flip,
+            self.interpolate,
+            self.caption,
+            self.print_flags,
         ]
         int_vals = [(x and 255 or 0) for x in vals]
-        util.write_value(fd, 'BBBBBBBBB', *int_vals)
+        util.write_value(fd, "BBBBBBBBB", *int_vals)
 
 
 class GuideResourceBlock(object):
-    def __init__(self,
-                 location=0,  # type: int
-                 direction=enums.GuideDirection.vertical  # type: int
-                 ):  # type: (...) -> None
+    def __init__(
+        self,
+        location=0,  # type: int
+        direction=enums.GuideDirection.vertical,  # type: int
+    ):  # type: (...) -> None
         self.location = location
         self.direction = direction
 
@@ -611,8 +628,7 @@ class GuideResourceBlock(object):
 
     @location.setter
     def location(self, value):  # type: (int) -> None
-        if (not isinstance(value, int) or
-                value < 0 or value > (1 << 32)):
+        if not isinstance(value, int) or value < 0 or value > (1 << 32):
             raise ValueError("location must be a 32-bit unsigned int")
         self._location = value
 
@@ -631,13 +647,13 @@ class GuideResourceBlock(object):
     @util.trace_read
     def read(cls, fd, header):
         # type: (BinaryIO, core.Header) -> GuideResourceBlock
-        location, direction = util.read_value(fd, 'IB')
+        location, direction = util.read_value(fd, "IB")
         return cls(location=location, direction=direction)
 
     @util.trace_write
     def write(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
-        util.write_value(fd, 'IB', self.location, self.direction)
+        util.write_value(fd, "IB", self.location, self.direction)
 
     def data_length(self, header):  # type: (core.Header) -> int
         return 5
@@ -647,12 +663,14 @@ class GridAndGuidesInfo(ImageResourceBlock):
     """
     Grid and guides resource.
     """
-    def __init__(self,
-                 name='',      # type: unicode
-                 grid_hori=0,  # type: int
-                 grid_vert=0,  # type: int
-                 guides=[]     # type: List[GuideResourceBlock]
-                 ):  # type: (...) -> None
+
+    def __init__(
+        self,
+        name="",  # type: unicode
+        grid_hori=0,  # type: int
+        grid_vert=0,  # type: int
+        guides=[],  # type: List[GuideResourceBlock]
+    ):  # type: (...) -> None
         self.name = name
         self.grid_hori = grid_hori
         self.grid_vert = grid_vert
@@ -671,8 +689,7 @@ class GridAndGuidesInfo(ImageResourceBlock):
 
     @grid_hori.setter
     def grid_hori(self, value):  # type: (int) -> None
-        if (not isinstance(value, int) or
-                value < 0 or value > (1 << 32)):
+        if not isinstance(value, int) or value < 0 or value > (1 << 32):
             raise ValueError("grid_hori must be a 32-bit unsigned int")
         self._grid_hori = value
 
@@ -683,8 +700,7 @@ class GridAndGuidesInfo(ImageResourceBlock):
 
     @grid_vert.setter
     def grid_vert(self, value):  # type: (int) -> None
-        if (not isinstance(value, int) or
-                value < 0 or value > (1 << 32)):
+        if not isinstance(value, int) or value < 0 or value > (1 << 32):
             raise ValueError("grid_vert must be a 32-bit unsigned int")
         self._grid_vert = value
 
@@ -699,26 +715,23 @@ class GridAndGuidesInfo(ImageResourceBlock):
         self._guides = value
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
-        version, grid_hori, grid_vert, nguides = util.read_value(
-            fd, 'IIII')
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
+        version, grid_hori, grid_vert, nguides = util.read_value(fd, "IIII")
         if version != 1:
             raise ValueError(
-                "Unknown version {} in grid and guides info block.".format(
-                    version))
+                "Unknown version {} in grid and guides info block.".format(version)
+            )
         guides = []
         for i in range(nguides):
             guides.append(GuideResourceBlock.read(fd, header))
-        return cls(
-            name=name, grid_hori=grid_hori, grid_vert=grid_vert,
-            guides=guides
-        )
+        return cls(name=name, grid_hori=grid_hori, grid_vert=grid_vert, guides=guides)
 
     def data_length(self, header):  # type: (core.Header) -> int
         return 16 + (5 * len(self.guides))
@@ -726,19 +739,18 @@ class GridAndGuidesInfo(ImageResourceBlock):
     def write_data(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
         util.write_value(
-            fd, 'IIII', self.version,
-            self.grid_hori, self.grid_vert,
-            len(self.guides)
+            fd, "IIII", self.version, self.grid_hori, self.grid_vert, len(self.guides)
         )
         for guide in self.guides:
             guide.write(fd, header)
 
 
 class CopyrightFlag(ImageResourceBlock):
-    def __init__(self,
-                 name='',         # type: unicode
-                 copyright=False  # type: bool
-                 ):  # type: (...) -> None
+    def __init__(
+        self,
+        name="",  # type: unicode
+        copyright=False,  # type: bool
+    ):  # type: (...) -> None
         self.name = name
         self.copyright = copyright
 
@@ -754,31 +766,31 @@ class CopyrightFlag(ImageResourceBlock):
         self._copyright = bool(value)
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
-        copyright = bool(util.read_value(fd, 'B'))
-        return cls(
-            name=name, copyright=copyright
-        )
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
+        copyright = bool(util.read_value(fd, "B"))
+        return cls(name=name, copyright=copyright)
 
     def data_length(self, header):  # type: (core.Header) -> int
         return 1
 
     def write_data(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
-        util.write_value(fd, 'B', self.copyright and 255 or 0)
+        util.write_value(fd, "B", self.copyright and 255 or 0)
 
 
 class Url(ImageResourceBlock):
-    def __init__(self,
-                 name='',  # type: unicode
-                 url=b''   # type: bytes
-                 ):  # type: (...) -> None
+    def __init__(
+        self,
+        name="",  # type: unicode
+        url=b"",  # type: bytes
+    ):  # type: (...) -> None
         self.name = name
         self.url = url
 
@@ -796,17 +808,16 @@ class Url(ImageResourceBlock):
         self._url = value
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
         url = fd.read(length)
-        return cls(
-            name=name, url=url
-        )
+        return cls(name=name, url=url)
 
     def data_length(self, header):  # type: (core.Header) -> int
         return len(self.url)
@@ -817,10 +828,11 @@ class Url(ImageResourceBlock):
 
 
 class GlobalAngle(ImageResourceBlock):
-    def __init__(self,
-                 name='',  # type: unicode
-                 angle=0   # type: int
-                 ):  # type: (...) -> None
+    def __init__(
+        self,
+        name="",  # type: unicode
+        angle=0,  # type: int
+    ):  # type: (...) -> None
         self.name = name
         self.angle = angle
 
@@ -833,39 +845,36 @@ class GlobalAngle(ImageResourceBlock):
 
     @angle.setter
     def angle(self, value):  # type: (int) -> None
-        if (not isinstance(value, int) or
-                value < -360 or value > 360):
-            raise ValueError(
-                "angle must be an int in range -360 to 360"
-            )
+        if not isinstance(value, int) or value < -360 or value > 360:
+            raise ValueError("angle must be an int in range -360 to 360")
         self._angle = value
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
-        angle = util.read_value(fd, 'i')
-        return cls(
-            name=name, angle=angle
-        )
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
+        angle = util.read_value(fd, "i")
+        return cls(name=name, angle=angle)
 
     def data_length(self, header):  # type: (core.Header) -> int
         return 4
 
     def write_data(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
-        util.write_value(fd, 'i', self.angle)
+        util.write_value(fd, "i", self.angle)
 
 
 class EffectsVisible(ImageResourceBlock):
-    def __init__(self,
-                 name='',       # type: unicode
-                 visible=False  # type: bool
-                 ):  # type: (...) -> None
+    def __init__(
+        self,
+        name="",  # type: unicode
+        visible=False,  # type: bool
+    ):  # type: (...) -> None
         self.name = name
         self.visible = visible
 
@@ -881,31 +890,31 @@ class EffectsVisible(ImageResourceBlock):
         self._visible = bool(value)
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
-        visible = bool(util.read_value(fd, 'B'))
-        return cls(
-            name=name, visible=visible
-        )
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
+        visible = bool(util.read_value(fd, "B"))
+        return cls(name=name, visible=visible)
 
     def data_length(self, header):  # type: (core.Header) -> int
         return 1
 
     def write_data(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
-        util.write_value(fd, 'B', self.visible and 255 or 0)
+        util.write_value(fd, "B", self.visible and 255 or 0)
 
 
 class DocumentSpecificIdsSeedNumber(ImageResourceBlock):
-    def __init__(self,
-                 name='',      # type: unicode
-                 base_value=0  # type: int
-                 ):  # type: (...) -> None
+    def __init__(
+        self,
+        name="",  # type: unicode
+        base_value=0,  # type: int
+    ):  # type: (...) -> None
         self.name = name
         self.base_value = base_value
 
@@ -918,30 +927,28 @@ class DocumentSpecificIdsSeedNumber(ImageResourceBlock):
 
     @base_value.setter
     def base_value(self, value):  # type: (int) -> None
-        if (not isinstance(value, int) or
-                value < 0 or value > (1 << 32)):
+        if not isinstance(value, int) or value < 0 or value > (1 << 32):
             raise ValueError("base_value must be a 32-bit integer")
         self._base_value = value
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
-        base_value = bool(util.read_value(fd, 'I'))
-        return cls(
-            name=name, base_value=base_value
-        )
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
+        base_value = bool(util.read_value(fd, "I"))
+        return cls(name=name, base_value=base_value)
 
     def data_length(self, header):  # type: (core.Header) -> int
         return 4
 
     def write_data(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
-        util.write_value(fd, 'I', self.base_value)
+        util.write_value(fd, "I", self.base_value)
 
 
 class UnicodeAlphaNames(ImageResourceUnicodeString):
@@ -949,10 +956,11 @@ class UnicodeAlphaNames(ImageResourceUnicodeString):
 
 
 class GlobalAltitude(ImageResourceBlock):
-    def __init__(self,
-                 name='',    # type: unicode
-                 altitude=0  # type: int
-                 ):  # type: (...) -> None
+    def __init__(
+        self,
+        name="",  # type: unicode
+        altitude=0,  # type: int
+    ):  # type: (...) -> None
         self.name = name
         self.altitude = altitude
 
@@ -965,30 +973,28 @@ class GlobalAltitude(ImageResourceBlock):
 
     @altitude.setter
     def altitude(self, value):  # type: (int) -> None
-        if (not isinstance(value, int) or
-                value < 0 or value > (1 << 32)):
+        if not isinstance(value, int) or value < 0 or value > (1 << 32):
             raise ValueError("altitude must be a 32-bit integer")
         self._altitude = value
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
-        altitude = util.read_value(fd, 'I')
-        return cls(
-            name=name, altitude=altitude
-        )
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
+        altitude = util.read_value(fd, "I")
+        return cls(name=name, altitude=altitude)
 
     def data_length(self, header):  # type: (core.Header) -> int
         return 4
 
     def write_data(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
-        util.write_value(fd, 'I', self.altitude)
+        util.write_value(fd, "I", self.altitude)
 
 
 class WorkflowUrl(ImageResourceUnicodeString):
@@ -996,10 +1002,11 @@ class WorkflowUrl(ImageResourceUnicodeString):
 
 
 class AlphaIdentifiers(ImageResourceBlock):
-    def __init__(self,
-                 name='',        # type: unicode
-                 identifiers=[]  # type: List[int]
-                 ):  # type: (...) -> None
+    def __init__(
+        self,
+        name="",  # type: unicode
+        identifiers=[],  # type: List[int]
+    ):  # type: (...) -> None
         self.name = name
         self.identifiers = identifiers
 
@@ -1016,39 +1023,39 @@ class AlphaIdentifiers(ImageResourceBlock):
         self._identifiers = value
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
-        length = util.read_value(fd, 'I')
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
+        length = util.read_value(fd, "I")
         buf = fd.read(4 * length)
         identifiers = list(np.frombuffer(buf, np.uint32))
-        return cls(
-            name=name, identifiers=identifiers
-        )
+        return cls(name=name, identifiers=identifiers)
 
     def data_length(self, header):  # type: (core.Header) -> int
         return 4 + (len(self.identifiers) * 4)
 
     def write_data(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
-        util.write_value(fd, 'I', len(self.identifiers))
+        util.write_value(fd, "I", len(self.identifiers))
         for identifier in self.identifiers:
-            util.write_value(fd, 'I', identifier)
+            util.write_value(fd, "I", identifier)
 
 
 class VersionInfo(ImageResourceBlock):
-    def __init__(self,
-                 name='',                     # type: unicode
-                 version=0,                   # type: int
-                 has_real_merged_data=False,  # type: bool
-                 writer='',                   # type: unicode
-                 reader='',                   # type: unicode
-                 file_version=0               # type: int
-                 ):  # type: (...) -> None
+    def __init__(
+        self,
+        name="",  # type: unicode
+        version=0,  # type: int
+        has_real_merged_data=False,  # type: bool
+        writer="",  # type: unicode
+        reader="",  # type: unicode
+        file_version=0,  # type: int
+    ):  # type: (...) -> None
         self.name = name
         self.version = version
         self.has_real_merged_data = has_real_merged_data
@@ -1065,8 +1072,7 @@ class VersionInfo(ImageResourceBlock):
 
     @version.setter
     def version(self, value):  # type: (int) -> None
-        if (not isinstance(value, int) or
-                value < 0 or value > (1 << 32)):
+        if not isinstance(value, int) or value < 0 or value > (1 << 32):
             raise ValueError("version must be a 32-bit integer")
         self._version = value
 
@@ -1108,53 +1114,59 @@ class VersionInfo(ImageResourceBlock):
 
     @file_version.setter
     def file_version(self, value):  # type: (int) -> None
-        if (not isinstance(value, int) or
-                value < 0 or value > (1 << 32)):
+        if not isinstance(value, int) or value < 0 or value > (1 << 32):
             raise ValueError("file_version must be a 32-bit integer")
         self._file_version = value
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
-        version, has_real_merged_data = util.read_value(fd, 'IB')
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
+        version, has_real_merged_data = util.read_value(fd, "IB")
         has_real_merged_data = bool(has_real_merged_data)
         writer = util.read_unicode_string(fd)
         reader = util.read_unicode_string(fd)
-        file_version = util.read_value(fd, 'I')
+        file_version = util.read_value(fd, "I")
         return cls(
-            name=name, version=version,
-            has_real_merged_data=has_real_merged_data, writer=writer,
-            reader=reader, file_version=file_version
+            name=name,
+            version=version,
+            has_real_merged_data=has_real_merged_data,
+            writer=writer,
+            reader=reader,
+            file_version=file_version,
         )
 
     def data_length(self, header):  # type: (core.Header) -> int
         return (
-            4 + 1 +
-            util.unicode_string_length(self.writer) +
-            util.unicode_string_length(self.reader) +
-            4)
+            4
+            + 1
+            + util.unicode_string_length(self.writer)
+            + util.unicode_string_length(self.reader)
+            + 4
+        )
 
     def write_data(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
-        util.write_value(fd, 'IB', self.version, self.has_real_merged_data)
+        util.write_value(fd, "IB", self.version, self.has_real_merged_data)
         util.write_unicode_string(fd, self.writer)
         util.write_unicode_string(fd, self.reader)
-        util.write_value(fd, 'I', self.file_version)
+        util.write_value(fd, "I", self.file_version)
 
 
 class PrintScale(ImageResourceBlock):
-    def __init__(self,
-                 name='',                               # type: unicode
-                 style=enums.PrintScaleStyle.centered,  # type: int
-                 x=0.0,                                 # type: float
-                 y=0.0,                                 # type: float
-                 scale=0.0                              # type: float
-                 ):  # type: (...) -> None
+    def __init__(
+        self,
+        name="",  # type: unicode
+        style=enums.PrintScaleStyle.centered,  # type: int
+        x=0.0,  # type: float
+        y=0.0,  # type: float
+        scale=0.0,  # type: float
+    ):  # type: (...) -> None
         self.name = name
         self.style = style
         self.x = x
@@ -1208,33 +1220,33 @@ class PrintScale(ImageResourceBlock):
         self._scale = value
 
     @classmethod
-    def read_data(cls,
-                  fd,           # type: BinaryIO
-                  resource_id,  # type: int
-                  name,         # type: unicode
-                  length,       # type: int
-                  header        # type: core.Header
-                  ):            # type: (...) -> ImageResourceBlock
-        style, x, y, scale = util.read_value(fd, 'Hfff')
-        return cls(
-            name=name, style=style, x=x, y=y, scale=scale
-        )
+    def read_data(
+        cls,
+        fd,  # type: BinaryIO
+        resource_id,  # type: int
+        name,  # type: unicode
+        length,  # type: int
+        header,  # type: core.Header
+    ):  # type: (...) -> ImageResourceBlock
+        style, x, y, scale = util.read_value(fd, "Hfff")
+        return cls(name=name, style=style, x=x, y=y, scale=scale)
 
     def data_length(self, header):  # type: (core.Header) -> int
-        return (2 + 4 + 4 + 4)
+        return 2 + 4 + 4 + 4
 
     def write_data(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
-        util.write_value(fd, 'Hfff', self.style, self.x, self.y, self.scale)
+        util.write_value(fd, "Hfff", self.style, self.x, self.y, self.scale)
 
 
 class ImageResources(object):
     """
     The image resource block section.
     """
-    def __init__(self,
-                 blocks=[]  # type: List[ImageResourceBlock]
-                 ):  # type: (...) -> None
+
+    def __init__(
+        self, blocks=[]  # type: List[ImageResourceBlock]
+    ):  # type: (...) -> None
         self.blocks = blocks
 
     @property
@@ -1249,10 +1261,12 @@ class ImageResources(object):
 
     def length(self, header):  # type: (core.Header) -> int
         return sum(block.total_length(header) for block in self.blocks)
+
     length.__doc__ = docs.length  # type: ignore
 
     def total_length(self, header):  # type: (core.Header) -> int
         return 4 + self.length(header)
+
     total_length.__doc__ = docs.total_length  # type: ignore
 
     def get_block(self, resource_id):
@@ -1269,7 +1283,7 @@ class ImageResources(object):
     @util.trace_read
     def read(cls, fd, header):
         # type: (BinaryIO, core.Header) -> ImageResources
-        length = util.read_value(fd, 'I')
+        length = util.read_value(fd, "I")
         end = fd.tell() + length
 
         util.log("length: {}, end: {}", length, end)
@@ -1279,16 +1293,17 @@ class ImageResources(object):
             blocks.append(ImageResourceBlock.read(fd, header))
 
         if fd.tell() != end:
-            raise ValueError(
-                "read the wrong amount reading image resource blocks")
+            raise ValueError("read the wrong amount reading image resource blocks")
 
         return cls(blocks=blocks)
+
     read.__func__.__doc__ = docs.read
 
     @util.trace_write
     def write(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
-        util.write_value(fd, 'I', self.length(header))
+        util.write_value(fd, "I", self.length(header))
         for block in self.blocks:
             block.write(fd, header)
+
     write.__doc__ = docs.write

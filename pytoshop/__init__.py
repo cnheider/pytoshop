@@ -7,9 +7,9 @@ from __future__ import unicode_literals, absolute_import
 from .core import PsdFile
 
 
-__author__ = 'Michael Droettboom'
-__email__ = 'mdboom@gmail.com'
-__version__ = '1.2.1'
+__author__ = "Michael Droettboom"
+__email__ = "mdboom@gmail.com"
+__version__ = "1.2.1"
 
 
 from typing import BinaryIO  # NOQA

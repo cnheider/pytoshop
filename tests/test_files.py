@@ -12,15 +12,15 @@ import pytest
 import pytoshop
 
 
-path = os.path.join(os.path.dirname(__file__), 'psd_files', '*.psd')
+path = os.path.join(os.path.dirname(__file__), "psd_files", "*.psd")
 
 
 @pytest.mark.parametrize("filename", glob.glob(path))
 def test_files(filename):
-    if filename.endswith('rt.psd'):
+    if filename.endswith("rt.psd"):
         return
 
-    with open(filename, 'rb') as fd:
+    with open(filename, "rb") as fd:
         f = pytoshop.read(fd)
 
         channels = f.image_data.channels
@@ -39,10 +39,10 @@ def test_files(filename):
 
 @pytest.mark.parametrize("filename", glob.glob(path))
 def test_convert_to_version2(filename):
-    if filename.endswith('rt.psd'):
+    if filename.endswith("rt.psd"):
         return
 
-    with open(filename, 'rb') as fd:
+    with open(filename, "rb") as fd:
         f = pytoshop.read(fd)
         f.version = 2
 

@@ -14,6 +14,7 @@ from . import util
 
 
 from typing import BinaryIO, TYPE_CHECKING  # NOQA
+
 if TYPE_CHECKING:
     from . import core  # NOQA
 
@@ -37,9 +38,10 @@ class ColorModeData(object):
     Note that ``pytoshop`` doesn't do anything meaningful for color
     mode data, and only stores the raw bytes in order to round-trip.
     """
-    def __init__(self,
-                 data=b''  # type: bytes
-                 ):  # type: (...) -> None
+
+    def __init__(
+        self, data=b""  # type: bytes
+    ):  # type: (...) -> None
         self.data = data
 
     @property
@@ -49,26 +51,29 @@ class ColorModeData(object):
     @data.setter
     def data(self, value):  # type: (bytes) -> None
         if not isinstance(value, bytes):
-            raise TypeError('data must be a bytes instance')
+            raise TypeError("data must be a bytes instance")
         self._data = value
 
     def length(self, header):  # type: (core.Header) -> int
         return len(self.data)
+
     length.__doc__ = docs.length  # type: ignore
 
     @classmethod
     @util.trace_read
     def read(cls, fd, header):
         # type: (BinaryIO, core.Header) -> ColorModeData
-        length = util.read_value(fd, 'I')
+        length = util.read_value(fd, "I")
         util.log("length: {}", length)
         data = fd.read(length)
         return cls(data=data)
+
     read.__func__.__doc__ = docs.read
 
     @util.trace_write
     def write(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
-        util.write_value(fd, 'I', self.length(header))
+        util.write_value(fd, "I", self.length(header))
         fd.write(self.data)
+
     write.__doc__ = docs.write

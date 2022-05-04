@@ -18,6 +18,7 @@ from . import enums
 
 
 from typing import Any, BinaryIO, Callable, List, Type, TYPE_CHECKING  # NOQA
+
 if TYPE_CHECKING:
     import numpy as np  # NOQA
 
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
 DEBUG = False
 
 
-def read_value(fd, fmt, endian='>'):
+def read_value(fd, fmt, endian=">"):
     # type: (BinaryIO, unicode, unicode) -> Any
     """
     Read a values from a file-like object.
@@ -80,7 +81,7 @@ def write_value(fd, fmt, *value, **kwargs):
     endian : str
         The endianness. Must be ``>`` or ``<``.  Default: ``>``.
     """
-    endian = kwargs.get('endian', '>')
+    endian = kwargs.get("endian", ">")
     fmt = endian + fmt
     fd.write(struct.pack(fmt, *value))
 
@@ -114,16 +115,16 @@ def read_pascal_string(fd, padding=1):
     value : str
         The unicode value of the string.
     """
-    length = read_value(fd, 'B')
+    length = read_value(fd, "B")
     if length == 0:
         fd.seek(padding - 1, 1)
-        return ''
+        return ""
 
     result = fd.read(length)
 
     padded_length = pad(length + 1, padding) - 1
     fd.seek(padded_length - length, 1)
-    return result.decode('utf8', 'replace')
+    return result.decode("utf8", "replace")
 
 
 def write_pascal_string(fd, value, padding=1):
@@ -143,23 +144,23 @@ def write_pascal_string(fd, value, padding=1):
         If provided, additional pad bytes will be written until
         the total amount written is a multiple of padding.
     """
-    value = value.encode('utf8')
+    value = value.encode("utf8")
 
     length = len(value)
     if length > 255:
         value = value[:255]
         length = 255
 
-    write_value(fd, 'B', len(value))
+    write_value(fd, "B", len(value))
     if len(value) == 0:
-        fd.write(b'\0' * (padding - 1))
+        fd.write(b"\0" * (padding - 1))
         return
 
     fd.write(value)
 
     padding = pad(length + 1, padding) - 1 - length
     if padding != 0:
-        fd.write(b'\0' * padding)
+        fd.write(b"\0" * padding)
 
 
 def pascal_string_length(value, padding=1):
@@ -178,7 +179,7 @@ def pascal_string_length(value, padding=1):
     length : int
         The length, in bytes.
     """
-    value = value.encode('utf8')
+    value = value.encode("utf8")
 
     if len(value) == 0:
         return padding
@@ -194,7 +195,7 @@ def decode_unicode_string(data):
     Decode Photoshop's definition of a `Unicode String
     <https://www.adobe.com/devnet-apps/photoshop/fileformatashtml/#UnicodeStringDefine>`__.
     """
-    return data[4:].rstrip(b'\0').decode('utf_16_be')
+    return data[4:].rstrip(b"\0").decode("utf_16_be")
 
 
 def encode_unicode_string(s):
@@ -203,8 +204,9 @@ def encode_unicode_string(s):
     Encode Photoshop's definition of a `Unicode String
     <https://www.adobe.com/devnet-apps/photoshop/fileformatashtml/#UnicodeStringDefine>`__.
     """
-    return (struct.pack('>L', len(s) + 1)  # type: ignore
-            + s.encode('utf_16_be') + b'\0\0')
+    return (
+        struct.pack(">L", len(s) + 1) + s.encode("utf_16_be") + b"\0\0"  # type: ignore
+    )
 
 
 def read_unicode_string(fd):
@@ -222,9 +224,9 @@ def read_unicode_string(fd):
     value : str
         The unicode value of the string.
     """
-    length = read_value(fd, 'L')
+    length = read_value(fd, "L")
     data = fd.read(length * 2)
-    return data.rstrip(b'\0').decode('utf_16_be')
+    return data.rstrip(b"\0").decode("utf_16_be")
 
 
 def write_unicode_string(fd, value):
@@ -271,17 +273,18 @@ def trace_read(func):  # pragma: no cover
 
     For internal use only.
     """
+
     @wraps(func)
     def wrapper(self, fd, *args):
         if isinstance(self, type):
             name = self.__name__
         else:
             name = self.__class__.__name__
-        log('>>> {} @ {}', name, fd.tell())
+        log(">>> {} @ {}", name, fd.tell())
         _indent[0] += 1
         result = func(self, fd, *args)
         _indent[0] -= 1
-        log('<<< {} @ {}', name, fd.tell())
+        log("<<< {} @ {}", name, fd.tell())
         return result
 
     if DEBUG:
@@ -306,7 +309,7 @@ def do_byteswap(arr):
     """
     Return a copy of an array, byteswapped.
     """
-    return arr.byteswap().view(arr.dtype.newbyteorder('>'))
+    return arr.byteswap().view(arr.dtype.newbyteorder(">"))
 
 
 def ensure_bigendian(arr):
@@ -321,22 +324,25 @@ def ensure_bigendian(arr):
     return arr
 
 
-if sys.byteorder == 'little':
+if sys.byteorder == "little":
+
     def needs_byteswap(arr):
         # type: (np.ndarray) -> bool
         """
         Returns True if the array needs to be byteswapped.
         """
         order = arr.dtype.byteorder
-        return order in ('<', '=')
+        return order in ("<", "=")
+
 else:
+
     def needs_byteswap(arr):
         # type: (np.ndarray) -> bool
         """
         Returns True if the array needs to be byteswapped.
         """
         order = arr.dtype.byteorder
-        return order == '<'
+        return order == "<"
 
 
 def ensure_native_endian(arr):
@@ -348,8 +354,8 @@ def ensure_native_endian(arr):
     """
     order = arr.dtype.byteorder
 
-    if order != '=':
-        return arr.byteswap().view(arr.dtype.newbyteorder('='))
+    if order != "=":
+        return arr.byteswap().view(arr.dtype.newbyteorder("="))
 
     return arr
 
@@ -370,7 +376,7 @@ def pack_bitflags(*values):
     result = 0
     for i, val in enumerate(values):
         if val:
-            result |= (1 << i)
+            result |= 1 << i
     return result
 
 
@@ -384,11 +390,8 @@ def assert_is_list_of(value, cls, min=None, max=None):
     for item in value:
         if not isinstance(item, cls):
             raise TypeError("Must be list of {}".format(cls.__name__))
-        if ((min is not None and item < min) or
-                (max is not None and item > max)):
-            raise ValueError(
-                "All values must be in range {} to {}".format(min, max)
-            )
+        if (min is not None and item < min) or (max is not None and item > max):
+            raise ValueError("All values must be in range {} to {}".format(min, max))
 
 
 def _get_channel_id(color, color_mode):
@@ -399,8 +402,7 @@ def _get_channel_id(color, color_mode):
     if exp_color_mode is not None and exp_color_mode != color_mode:
         raise ValueError(
             "Color '{!s}' is not valid for color mode '{!s}', "
-            "expected '{!s}'".format(
-                color, color_mode, exp_color_mode)
+            "expected '{!s}'".format(color, color_mode, exp_color_mode)
         )
 
     return channel_id

@@ -14,12 +14,12 @@ from pytoshop import enums
 from pytoshop.user import nested_layers
 
 
-DATA_PATH = os.path.join(os.path.dirname(__file__), 'psd_files')
+DATA_PATH = os.path.join(os.path.dirname(__file__), "psd_files")
 
 
 def test_nested_layers():
-    filename = os.path.join(DATA_PATH, 'group.psd')
-    with open(filename, 'rb') as fd:
+    filename = os.path.join(DATA_PATH, "group.psd")
+    with open(filename, "rb") as fd:
         psd = pytoshop.PsdFile.read(fd)
 
         layers = nested_layers.psd_to_nested_layers(psd)
@@ -33,14 +33,15 @@ def test_nested_layers():
 
 
 def test_nested_layers_no_adjust():
-    filename = os.path.join(DATA_PATH, 'group.psd')
-    with open(filename, 'rb') as fd:
+    filename = os.path.join(DATA_PATH, "group.psd")
+    with open(filename, "rb") as fd:
         psd = pytoshop.PsdFile.read(fd)
 
         layers = nested_layers.psd_to_nested_layers(psd)
 
         psd2 = nested_layers.nested_layers_to_psd(
-            layers, enums.ColorMode.rgb, size=(psd.width, psd.height))
+            layers, enums.ColorMode.rgb, size=(psd.width, psd.height)
+        )
 
         fd = io.BytesIO()
         psd2.write(fd)
@@ -63,21 +64,18 @@ def test_from_scratch(vector_mask):
     layers = [
         Group(
             layers=[
-                Image(channels={0: img1},
-                      top=0, left=0, bottom=100, right=80),
-                Image(channels=img2,
-                      top=15, left=15),
-                Image(channels=img4,
-                      top=42, left=43),
-                Image(channels=[img1, img1],
-                      top=-5, left=49)
-            ]),
-        Image(channels={0: img3})
+                Image(channels={0: img1}, top=0, left=0, bottom=100, right=80),
+                Image(channels=img2, top=15, left=15),
+                Image(channels=img4, top=42, left=43),
+                Image(channels=[img1, img1], top=-5, left=49),
+            ]
+        ),
+        Image(channels={0: img3}),
     ]
 
     psd = nested_layers.nested_layers_to_psd(
-        layers, enums.ColorMode.grayscale,
-        vector_mask=vector_mask)
+        layers, enums.ColorMode.grayscale, vector_mask=vector_mask
+    )
 
     buff = io.BytesIO()
     psd.write(buff)
@@ -96,16 +94,14 @@ def test_mixed_depth():
     layers = [
         Group(
             layers=[
-                Image(channels={0: img1},
-                      top=0, left=0, bottom=100, right=80),
-                Image(channels=img2,
-                      top=15, left=15),
-            ])
+                Image(channels={0: img1}, top=0, left=0, bottom=100, right=80),
+                Image(channels=img2, top=15, left=15),
+            ]
+        )
     ]
 
     with pytest.raises(ValueError):
-        nested_layers.nested_layers_to_psd(
-            layers, enums.ColorMode.grayscale)
+        nested_layers.nested_layers_to_psd(layers, enums.ColorMode.grayscale)
 
 
 def test_mismatched_height():
@@ -116,14 +112,13 @@ def test_mismatched_height():
     layers = [
         Group(
             layers=[
-                Image(channels={0: img1},
-                      top=0, left=0, bottom=101, right=80),
-            ])
+                Image(channels={0: img1}, top=0, left=0, bottom=101, right=80),
+            ]
+        )
     ]
 
     with pytest.raises(ValueError):
-        nested_layers.nested_layers_to_psd(
-            layers, enums.ColorMode.grayscale)
+        nested_layers.nested_layers_to_psd(layers, enums.ColorMode.grayscale)
 
 
 def test_mismatched_width():
@@ -134,14 +129,13 @@ def test_mismatched_width():
     layers = [
         Group(
             layers=[
-                Image(channels={0: img1},
-                      top=0, left=0, bottom=100, right=81),
-            ])
+                Image(channels={0: img1}, top=0, left=0, bottom=100, right=81),
+            ]
+        )
     ]
 
     with pytest.raises(ValueError):
-        nested_layers.nested_layers_to_psd(
-            layers, enums.ColorMode.grayscale)
+        nested_layers.nested_layers_to_psd(layers, enums.ColorMode.grayscale)
 
 
 def test_mismatched_color_mode():
@@ -149,9 +143,14 @@ def test_mismatched_color_mode():
 
     img1 = np.empty((100, 80), dtype=np.uint8)
 
-    im = Image(channels={0: img1},
-               top=0, left=0, bottom=100, right=80,
-               color_mode=enums.ColorMode.rgb)
+    im = Image(
+        channels={0: img1},
+        top=0,
+        left=0,
+        bottom=100,
+        right=80,
+        color_mode=enums.ColorMode.rgb,
+    )
 
     with pytest.raises(ValueError):
         im.get_channel(enums.ColorChannel.gray)
@@ -159,30 +158,19 @@ def test_mismatched_color_mode():
     with pytest.raises(KeyError):
         im.get_channel(enums.ColorChannel.blue)
 
-    layers = [
-        Group(
-            layers=[
-                im
-            ])
-    ]
+    layers = [Group(layers=[im])]
 
     with pytest.raises(ValueError):
-        nested_layers.nested_layers_to_psd(
-            layers, enums.ColorMode.grayscale)
+        nested_layers.nested_layers_to_psd(layers, enums.ColorMode.grayscale)
 
 
 def test_no_images():
     from pytoshop.user.nested_layers import Group
 
-    layers = [
-        Group(
-            layers=[]
-            )
-        ]
+    layers = [Group(layers=[])]
 
     with pytest.raises(ValueError):
-        nested_layers.nested_layers_to_psd(
-            layers, enums.ColorMode.grayscale)
+        nested_layers.nested_layers_to_psd(layers, enums.ColorMode.grayscale)
 
 
 @pytest.mark.parametrize("compression", (0, 1, 2, 3))
@@ -203,22 +191,12 @@ def test_proxy(compression):
 
     image_layers = []
     for i in range(256):
-        image_layers.append(
-            Image(
-                channels={0: ImageProxy()},
-                top=i, left=i
-            )
-        )
+        image_layers.append(Image(channels={0: ImageProxy()}, top=i, left=i))
 
-    layers = [
-        Group(
-            layers=image_layers
-        )
-    ]
+    layers = [Group(layers=image_layers)]
 
     psd = nested_layers.nested_layers_to_psd(
-        layers, enums.ColorMode.grayscale,
-        compression=compression
+        layers, enums.ColorMode.grayscale, compression=compression
     )
 
     buff = io.BytesIO()
@@ -234,8 +212,8 @@ def test_proxy(compression):
 
 
 def test_masked_layer():
-    filename = os.path.join(DATA_PATH, 'masked_layer.psd')
-    with open(filename, 'rb') as fd:
+    filename = os.path.join(DATA_PATH, "masked_layer.psd")
+    with open(filename, "rb") as fd:
         psd = pytoshop.PsdFile.read(fd)
 
         layers = nested_layers.psd_to_nested_layers(psd)
@@ -243,5 +221,5 @@ def test_masked_layer():
         assert layers[0].channels[0].shape == layers[0].channels[-2].shape
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_proxy(1)

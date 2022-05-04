@@ -95,30 +95,26 @@ _compress_constant_params = """
 
 
 color_depth_dtype_map = {
-    1: 'u1',
-    8: 'u1',
-    16: '>u2',
-    32: '>u4'
+    1: "u1",
+    8: "u1",
+    16: ">u2",
+    32: ">u4",
 }  # type: Dict[int, unicode]
 
 
-color_depth_size_map = {
-    1: 1,
-    8: 1,
-    16: 2,
-    32: 4
-}  # type: Dict[int, int]
+color_depth_size_map = {1: 1, 8: 1, 16: 2, 32: 4}  # type: Dict[int, int]
 
 
-def decompress_raw(data,    # type: bytes
-                   shape,   # type: Tuple[int, int]
-                   depth,   # type: int
-                   version  # type: int
-                   ):       # type: (...) -> np.ndarray
+def decompress_raw(
+    data,  # type: bytes
+    shape,  # type: Tuple[int, int]
+    depth,  # type: int
+    version,  # type: int
+):  # type: (...) -> np.ndarray
     """
-    Converts raw data to a Numpy array.
+        Converts raw data to a Numpy array.
 
-{}
+    {}
     """
     depth = enums.ColorDepth(depth)
 
@@ -126,7 +122,7 @@ def decompress_raw(data,    # type: bytes
     itemsize = color_depth_size_map[depth]
 
     # Truncate the data to a multiple of the dtype size
-    data = data[:(len(data) // itemsize) * itemsize]
+    data = data[: (len(data) // itemsize) * itemsize]
 
     arr = np.frombuffer(data, dtype)
 
@@ -139,99 +135,104 @@ def decompress_raw(data,    # type: bytes
     return image
 
 
-decompress_raw.__doc__ = decompress_raw.__doc__.format(   # type: ignore
-    _decompress_params)
+decompress_raw.__doc__ = decompress_raw.__doc__.format(  # type: ignore
+    _decompress_params
+)
 
 
-def decompress_rle(data,    # type: bytes
-                   shape,   # type: Tuple[int, int]
-                   depth,   # type: int
-                   version  # type: int
-                   ):       # type: (...) -> np.ndarray
+def decompress_rle(
+    data,  # type: bytes
+    shape,  # type: Tuple[int, int]
+    depth,  # type: int
+    version,  # type: int
+):  # type: (...) -> np.ndarray
     """
-    Decompress run length encoded data.
+        Decompress run length encoded data.
 
-{}
+    {}
     """
     output = packbits.decode(
-        data, shape[0], shape[1], color_depth_size_map[depth], version)
+        data, shape[0], shape[1], color_depth_size_map[depth], version
+    )
 
     # Now pass along to the raw decoder to get a Numpy array
     return decompress_raw(output, shape, depth, version)
 
 
 decompress_rle.__doc__ = decompress_rle.__doc__.format(  # type: ignore
-    _decompress_params)
+    _decompress_params
+)
 
 
-def decompress_zip(data,    # type: bytes
-                   shape,   # type: Tuple[int, int]
-                   depth,   # type: int
-                   version  # type: int
-                   ):       # type: (...) -> np.ndarray
+def decompress_zip(
+    data,  # type: bytes
+    shape,  # type: Tuple[int, int]
+    depth,  # type: int
+    version,  # type: int
+):  # type: (...) -> np.ndarray
     """
-    Decompress zip (zlib) encoded data.
+        Decompress zip (zlib) encoded data.
 
-{}
+    {}
     """
     data = zlib.decompress(data)
     return decompress_raw(data, shape, depth, version)
 
 
 decompress_zip.__doc__ = decompress_zip.__doc__.format(  # type: ignore
-    _decompress_params)
+    _decompress_params
+)
 
 
-def decompress_zip_prediction(data,    # type: bytes
-                              shape,   # type: Tuple[int, int]
-                              depth,   # type: int
-                              version  # type: int
-                              ):       # type: (...) -> np.ndarray
+def decompress_zip_prediction(
+    data,  # type: bytes
+    shape,  # type: Tuple[int, int]
+    depth,  # type: int
+    version,  # type: int
+):  # type: (...) -> np.ndarray
     """
-    Decompress zip (zlib) with prediction encoded data.
+        Decompress zip (zlib) with prediction encoded data.
 
-    Not supported for 1- or 32-bit images.
+        Not supported for 1- or 32-bit images.
 
-{}
+    {}
     """
     if depth == 1:  # pragma: no cover
-        raise ValueError(
-            "zip with prediction is not supported for 1-bit images")
+        raise ValueError("zip with prediction is not supported for 1-bit images")
     elif depth == 32:
-        raise ValueError(
-            "zip with prediction is not implemented for 32-bit images")
+        raise ValueError("zip with prediction is not implemented for 32-bit images")
     elif depth == 8:
         decoder = packbits.decode_prediction_8bit
     else:
         decoder = packbits.decode_prediction_16bit
 
     data = zlib.decompress(data)
-    image = util.ensure_native_endian(
-        decompress_raw(data, shape, depth, version))
+    image = util.ensure_native_endian(decompress_raw(data, shape, depth, version))
     for i in range(len(image)):
         decoder(image[i].flatten())
     return image
 
 
-decompress_zip_prediction.__doc__ = \
-    decompress_zip_prediction.__doc__.format(  # type: ignore
-        _decompress_params)
+decompress_zip_prediction.__doc__ = decompress_zip_prediction.__doc__.format(
+    _decompress_params
+)  # type: ignore
 
 
 decompressors = {
     enums.Compression.raw: decompress_raw,
     enums.Compression.rle: decompress_rle,
     enums.Compression.zip: decompress_zip,
-    enums.Compression.zip_prediction: decompress_zip_prediction
+    enums.Compression.zip_prediction: decompress_zip_prediction,
 }  # type: Dict[int, Callable]
 
 
-def decompress_image(data,         # type: bytes
-                     compression,  # type: int
-                     shape,        # type: Tuple[int, int]
-                     depth,        # type: int
-                     version       # type: int
-                     ):            # type: (...) -> np.ndarray
+def decompress_image(
+    data,  # type: bytes
+    compression,  # type: int
+    shape,  # type: Tuple[int, int]
+    depth,  # type: int
+    version,  # type: int
+):  # type: (...) -> np.ndarray
     """
     Decompress data with the given compression.
 
@@ -264,23 +265,25 @@ def decompress_image(data,         # type: bytes
     return decompressors[compression](data, shape, depth, version)
 
 
-def normalize_image(image,  # type: np.ndarray
-                    depth   # type: int
-                    ):      # type: (...) -> np.ndarray
+def normalize_image(
+    image,  # type: np.ndarray
+    depth,  # type: int
+):  # type: (...) -> np.ndarray
     if depth == 1:
         image = np.packbits(image.flatten())
     return image
 
 
-def compress_raw(fd,      # type: BinaryIO
-                 image,   # type: np.ndarray
-                 depth,   # type: int
-                 version  # type: int
-                 ):       # type: (...) -> None
+def compress_raw(
+    fd,  # type: BinaryIO
+    image,  # type: np.ndarray
+    depth,  # type: int
+    version,  # type: int
+):  # type: (...) -> None
     """
-    Write a Numpy array to raw bytes in a file.
+        Write a Numpy array to raw bytes in a file.
 
-{}
+    {}
     """
     image = normalize_image(image, depth)
     if len(image.shape) == 2:
@@ -294,31 +297,30 @@ def compress_raw(fd,      # type: BinaryIO
         fd.write(image)
 
 
-compress_raw.__doc__ = compress_raw.__doc__.format(  # type: ignore
-    _compress_params)
+compress_raw.__doc__ = compress_raw.__doc__.format(_compress_params)  # type: ignore
 
 
-def compress_rle(fd,      # type: BinaryIO
-                 image,   # type: np.ndarray
-                 depth,   # type: int
-                 version  # type: int
-                 ):       # type: (...) -> None
+def compress_rle(
+    fd,  # type: BinaryIO
+    image,  # type: np.ndarray
+    depth,  # type: int
+    version,  # type: int
+):  # type: (...) -> None
     """
-    Write a Numpy array to a run length encoded stream.
+        Write a Numpy array to a run length encoded stream.
 
-{}
+    {}
     """
     if depth == 1:  # pragma: no cover
-        raise ValueError(
-            "rle compression is not supported for 1-bit images")
+        raise ValueError("rle compression is not supported for 1-bit images")
 
     start = fd.tell()
     if version == 1:
         fd.seek(image.shape[0] * 2, 1)
-        lengths = np.empty((len(image),), dtype='>u2')
+        lengths = np.empty((len(image),), dtype=">u2")
     else:
         fd.seek(image.shape[0] * 4, 1)
-        lengths = np.empty((len(image),), dtype='>u4')
+        lengths = np.empty((len(image),), dtype=">u4")
 
     if util.needs_byteswap(image):
         for i, row in enumerate(image):
@@ -338,19 +340,19 @@ def compress_rle(fd,      # type: BinaryIO
     fd.seek(end)
 
 
-compress_rle.__doc__ = compress_rle.__doc__.format(  # type: ignore
-    _compress_params)
+compress_rle.__doc__ = compress_rle.__doc__.format(_compress_params)  # type: ignore
 
 
-def compress_zip(fd,      # type: BinaryIO
-                 image,   # type: np.ndarray
-                 depth,   # type: int
-                 version  # type: int
-                 ):       # type: (...) -> None
+def compress_zip(
+    fd,  # type: BinaryIO
+    image,  # type: np.ndarray
+    depth,  # type: int
+    version,  # type: int
+):  # type: (...) -> None
     """
-    Write a Numpy array to a zip (zlib) compressed stream.
+        Write a Numpy array to a zip (zlib) compressed stream.
 
-{}
+    {}
     """
     image = normalize_image(image, depth)
     if util.needs_byteswap(image):
@@ -363,29 +365,27 @@ def compress_zip(fd,      # type: BinaryIO
         fd.write(zlib.compress(image))
 
 
-compress_zip.__doc__ = compress_zip.__doc__.format(  # type: ignore
-    _compress_params)
+compress_zip.__doc__ = compress_zip.__doc__.format(_compress_params)  # type: ignore
 
 
-def compress_zip_prediction(fd,      # type: BinaryIO
-                            image,   # type: np.ndarray
-                            depth,   # type: int
-                            version  # type: int
-                            ):       # type: (...) -> None
+def compress_zip_prediction(
+    fd,  # type: BinaryIO
+    image,  # type: np.ndarray
+    depth,  # type: int
+    version,  # type: int
+):  # type: (...) -> None
     """
-    Write a Numpy array to a zip (zlib) with prediction compressed
-    stream.
+        Write a Numpy array to a zip (zlib) with prediction compressed
+        stream.
 
-    Not supported for 1- or 32-bit images.
+        Not supported for 1- or 32-bit images.
 
-{}
+    {}
     """
     if depth == 1:  # pragma: no cover
-        raise ValueError(
-            "zip with prediction is not supported for 1-bit images")
+        raise ValueError("zip with prediction is not supported for 1-bit images")
     elif depth == 32:  # pragma: no cover
-        raise ValueError(
-            "zip with prediction is not implemented for 32-bit images")
+        raise ValueError("zip with prediction is not implemented for 32-bit images")
     elif depth == 8:
         encoder = packbits.encode_prediction_8bit
     elif depth == 16:
@@ -399,27 +399,28 @@ def compress_zip_prediction(fd,      # type: BinaryIO
     fd.write(compressor.flush())
 
 
-compress_zip_prediction.__doc__ = \
-    compress_zip_prediction.__doc__.format(  # type: ignore
-        _compress_params)
+compress_zip_prediction.__doc__ = compress_zip_prediction.__doc__.format(
+    _compress_params
+)  # type: ignore
 
 
 compressors = {
     enums.Compression.raw: compress_raw,
     enums.Compression.rle: compress_rle,
     enums.Compression.zip: compress_zip,
-    enums.Compression.zip_prediction: compress_zip_prediction
+    enums.Compression.zip_prediction: compress_zip_prediction,
 }  # type: Dict[int, Callable]
 
 
-def compress_image(fd,            # type: BinaryIO
-                   image,         # type: np.ndarray
-                   compression,   # type: int
-                   shape,         # type: Tuple[int, int]
-                   num_channels,  # type: int
-                   depth,         # type: int
-                   version        # type: int
-                   ):             # type: (...) -> None
+def compress_image(
+    fd,  # type: BinaryIO
+    image,  # type: np.ndarray
+    compression,  # type: int
+    shape,  # type: Tuple[int, int]
+    num_channels,  # type: int
+    depth,  # type: int
+    version,  # type: int
+):  # type: (...) -> None
     """
     Write an image with the given compression type.
 
@@ -463,7 +464,7 @@ def compress_image(fd,            # type: BinaryIO
         image = np.dtype(color_depth_dtype_map[depth]).type(image)
 
     dtype = image.dtype
-    if dtype.kind != 'u':
+    if dtype.kind != "u":
         raise ValueError("Image array dtype must be unsigned int")
     if dtype.itemsize != color_depth_size_map[depth]:
         raise ValueError("Image array values of wrong size")
@@ -471,12 +472,11 @@ def compress_image(fd,            # type: BinaryIO
     if np.isscalar(image) or image.shape == ():
         width = shape[1]
         rows = shape[0] * num_channels
-        return constant_compressors[compression](
-            fd, image, width, rows, depth, version)
+        return constant_compressors[compression](fd, image, width, rows, depth, version)
     else:
         acceptable_shapes = [
             (num_channels, shape[0], shape[1]),
-            (num_channels * shape[0], shape[1])
+            (num_channels * shape[0], shape[1]),
         ]
 
         if image.shape not in acceptable_shapes:
@@ -488,10 +488,11 @@ def compress_image(fd,            # type: BinaryIO
         return compressors[compression](fd, image, depth, version)
 
 
-def _make_onebit_constant(value,  # type: int
-                          width,  # type: int
-                          rows    # type: int
-                          ):      # type: (...) -> np.ndarray
+def _make_onebit_constant(
+    value,  # type: int
+    width,  # type: int
+    rows,  # type: int
+):  # type: (...) -> np.ndarray
     if value:
         value == 255
     else:
@@ -499,25 +500,27 @@ def _make_onebit_constant(value,  # type: int
     return np.full((width, rows), value, np.uint8)
 
 
-def _make_constant_row(value,  # type: int
-                       width,  # type: int
-                       depth   # type: int
-                       ):      # type: (...) -> np.ndarray
+def _make_constant_row(
+    value,  # type: int
+    width,  # type: int
+    depth,  # type: int
+):  # type: (...) -> np.ndarray
     return np.full((width,), value, dtype=color_depth_dtype_map[depth])
 
 
-def compress_constant_raw(fd,      # type: BinaryIO
-                          value,   # type: int
-                          width,   # type: int
-                          rows,    # type: int
-                          depth,   # type: int
-                          version  # type: int
-                          ):       # type: (...) -> None
+def compress_constant_raw(
+    fd,  # type: BinaryIO
+    value,  # type: int
+    width,  # type: int
+    rows,  # type: int
+    depth,  # type: int
+    version,  # type: int
+):  # type: (...) -> None
     """
-    Write a virtual image containing a constant to a raw
-    stream.
+        Write a virtual image containing a constant to a raw
+        stream.
 
-{}
+    {}
     """
     if depth == 1:
         image = _make_onebit_constant(value, width, rows)
@@ -529,58 +532,59 @@ def compress_constant_raw(fd,      # type: BinaryIO
             fd.write(row)
 
 
-compress_constant_raw.__doc__ = \
-    compress_constant_raw.__doc__.format(  # type: ignore
-        _compress_constant_params)
+compress_constant_raw.__doc__ = compress_constant_raw.__doc__.format(  # type: ignore
+    _compress_constant_params
+)
 
 
-def compress_constant_rle(fd,      # type: BinaryIO
-                          value,   # type: int
-                          width,   # type: int
-                          rows,    # type: int
-                          depth,   # type: int
-                          version  # type: int
-                          ):       # type: (...) -> None
+def compress_constant_rle(
+    fd,  # type: BinaryIO
+    value,  # type: int
+    width,  # type: int
+    rows,  # type: int
+    depth,  # type: int
+    version,  # type: int
+):  # type: (...) -> None
     """
-    Write a virtual image containing a constant to a runlength-encoded
-    stream.
+        Write a virtual image containing a constant to a runlength-encoded
+        stream.
 
-{}
+    {}
     """
     if depth == 1:  # pragma: no cover
-        raise ValueError(
-            "rle compression is not supported for 1-bit images")
+        raise ValueError("rle compression is not supported for 1-bit images")
 
     row = _make_constant_row(value, width, depth)
     packed = packbits.encode(row.tobytes())
 
     if version == 1:
-        lengths = np.full((rows,), len(packed), dtype='>u2')
+        lengths = np.full((rows,), len(packed), dtype=">u2")
     else:
-        lengths = np.full((rows,), len(packed), dtype='>u4')
+        lengths = np.full((rows,), len(packed), dtype=">u4")
     fd.write(lengths.tobytes())
 
     for i in range(rows):
         fd.write(packed)
 
 
-compress_constant_rle.__doc__ = \
-    compress_constant_rle.__doc__.format(  # type: ignore
-        _compress_constant_params)
+compress_constant_rle.__doc__ = compress_constant_rle.__doc__.format(  # type: ignore
+    _compress_constant_params
+)
 
 
-def compress_constant_zip(fd,      # type: BinaryIO
-                          value,   # type: int
-                          width,   # type: int
-                          rows,    # type: int
-                          depth,   # type: int
-                          version  # type: int
-                          ):       # type: (...) -> None
+def compress_constant_zip(
+    fd,  # type: BinaryIO
+    value,  # type: int
+    width,  # type: int
+    rows,  # type: int
+    depth,  # type: int
+    version,  # type: int
+):  # type: (...) -> None
     """
-    Write a virtual image containing a constant to a zip compressed
-    stream.
+        Write a virtual image containing a constant to a zip compressed
+        stream.
 
-{}
+    {}
     """
     if depth == 1:
         image = _make_onebit_constant(value, width, rows)
@@ -591,30 +595,29 @@ def compress_constant_zip(fd,      # type: BinaryIO
         fd.write(zlib.compress(row * rows))
 
 
-compress_constant_zip.__doc__ = \
-    compress_constant_zip.__doc__.format(  # type: ignore
-        _compress_constant_params)
+compress_constant_zip.__doc__ = compress_constant_zip.__doc__.format(  # type: ignore
+    _compress_constant_params
+)
 
 
-def compress_constant_zip_prediction(fd,      # type: BinaryIO
-                                     value,   # type: int
-                                     width,   # type: int
-                                     rows,    # type: int
-                                     depth,   # type: int
-                                     version  # type: int
-                                     ):       # type: (...) -> np.ndarray
+def compress_constant_zip_prediction(
+    fd,  # type: BinaryIO
+    value,  # type: int
+    width,  # type: int
+    rows,  # type: int
+    depth,  # type: int
+    version,  # type: int
+):  # type: (...) -> np.ndarray
     """
-    Write a virtual image containing a constant to a zip with
-    prediction compressed stream.
+        Write a virtual image containing a constant to a zip with
+        prediction compressed stream.
 
-{}
+    {}
     """
     if depth == 1:  # pragma: no cover
-        raise ValueError(
-            "zip with prediction is not supported for 1-bit images")
+        raise ValueError("zip with prediction is not supported for 1-bit images")
     elif depth == 32:  # pragma: no cover
-        raise ValueError(
-            "zip with prediction is not implemented for 32-bit images")
+        raise ValueError("zip with prediction is not implemented for 32-bit images")
     elif depth == 8:
         encoder = packbits.encode_prediction_8bit
     elif depth == 16:
@@ -629,14 +632,16 @@ def compress_constant_zip_prediction(fd,      # type: BinaryIO
     fd.write(zlib.compress(row * rows))
 
 
-compress_constant_zip_prediction.__doc__ = \
+compress_constant_zip_prediction.__doc__ = (
     compress_constant_zip_prediction.__doc__.format(  # type: ignore
-        _compress_constant_params)
+        _compress_constant_params
+    )
+)
 
 
 constant_compressors = {
     enums.Compression.raw: compress_constant_raw,
     enums.Compression.rle: compress_constant_rle,
     enums.Compression.zip: compress_constant_zip,
-    enums.Compression.zip_prediction: compress_constant_zip_prediction
+    enums.Compression.zip_prediction: compress_constant_zip_prediction,
 }  # type: Dict[int, Callable]

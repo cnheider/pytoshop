@@ -25,14 +25,16 @@ class Header(object):
     """
     Manages the header at the start of a PSD/PSB file.
     """
-    def __init__(self,
-                 version=enums.Version.version_1,  # type: int
-                 num_channels=1,                   # type: int
-                 height=1,                         # type: int
-                 width=1,                          # type: int
-                 depth=enums.ColorDepth.depth8,    # type: int
-                 color_mode=enums.ColorMode.rgb    # type: int
-                 ):  # type: (...) -> None
+
+    def __init__(
+        self,
+        version=enums.Version.version_1,  # type: int
+        num_channels=1,  # type: int
+        height=1,  # type: int
+        width=1,  # type: int
+        depth=enums.ColorDepth.depth8,  # type: int
+        color_mode=enums.ColorMode.rgb,  # type: int
+    ):  # type: (...) -> None
         self.version = version
         self.num_channels = num_channels
         self.height = height
@@ -75,9 +77,7 @@ class Header(object):
             raise TypeError("height must be an integer")
         version_max = self.max_size_mapping[self.version]
         if value < 1 or value > version_max:
-            raise ValueError(
-                "height must be in range 1-{}".format(version_max)
-            )
+            raise ValueError("height must be in range 1-{}".format(version_max))
         self._height = value
 
     @property
@@ -91,9 +91,7 @@ class Header(object):
             raise TypeError("width must be an integer")
         version_max = self.max_size_mapping[self.version]
         if value < 1 or value > version_max:
-            raise ValueError(
-                "width must be in range 1-{}".format(version_max)
-            )
+            raise ValueError("width must be in range 1-{}".format(version_max))
         self._width = value
 
     @property
@@ -118,10 +116,7 @@ class Header(object):
             raise ValueError("Invalid color mode.")
         self._color_mode = value
 
-    max_size_mapping = {
-        1: 30000,
-        2: 300000
-    }  # type: Dict[int, int]
+    max_size_mapping = {1: 30000, 2: 300000}  # type: Dict[int, int]
 
     @property
     def shape(self):  # type: (...) -> Tuple[int, int]
@@ -130,23 +125,41 @@ class Header(object):
     @classmethod
     @util.trace_read
     def header_read(cls, fd):  # type: (BinaryIO) -> Header
-        (signature, version, _reserved, num_channels,
-         height, width, depth, color_mode) = util.read_value(fd, '4sH6sHIIHH')
+        (
+            signature,
+            version,
+            _reserved,
+            num_channels,
+            height,
+            width,
+            depth,
+            color_mode,
+        ) = util.read_value(fd, "4sH6sHIIHH")
 
-        if signature != b'8BPS':
+        if signature != b"8BPS":
             raise ValueError("Invalid signature '{}'".format(signature))
 
         util.log(
-            'version: {}, num_channels: {}, '
-            'width: {}, height: {}, depth: {}, '
-            'color_mode: {}',
-            enums.Version(version), num_channels, width, height,
-            depth, enums.ColorMode(color_mode)
+            "version: {}, num_channels: {}, "
+            "width: {}, height: {}, depth: {}, "
+            "color_mode: {}",
+            enums.Version(version),
+            num_channels,
+            width,
+            height,
+            depth,
+            enums.ColorMode(color_mode),
         )
 
-        return cls(version=version, num_channels=num_channels,
-                   width=width, height=height, depth=depth,
-                   color_mode=color_mode)
+        return cls(
+            version=version,
+            num_channels=num_channels,
+            width=width,
+            height=height,
+            depth=depth,
+            color_mode=color_mode,
+        )
+
     header_read.__func__.__doc__ = docs.read_single
 
     @util.trace_write
@@ -160,10 +173,18 @@ class Header(object):
             Must be writable, seekable and open in binary mode.
         """
         util.write_value(
-            fd, '4sH6sHIIHH', b'8BPS', self.version, b'',
-            self.num_channels, self.height, self.width, self.depth,
-            self.color_mode
+            fd,
+            "4sH6sHIIHH",
+            b"8BPS",
+            self.version,
+            b"",
+            self.num_channels,
+            self.height,
+            self.width,
+            self.depth,
+            self.color_mode,
         )
+
     write.__doc__ = docs.write_single
 
 
@@ -171,20 +192,21 @@ class PsdFile(Header):
     """
     Represents an entire PSD file.
     """
+
     def __init__(
-            self,
-            version=enums.Version.version_1,  # type: int
-            num_channels=1,                   # type: int
-            height=1,                         # type: int
-            width=1,                          # type: int
-            depth=enums.ColorDepth.depth8,    # type: int
-            color_mode=enums.ColorMode.rgb,   # type: int
-            color_mode_data=None,  # type: Optional[ColorModeData]
-            image_resources=None,  # type: Optional[ImageResources]
-            layer_and_mask_info=None,  # type: Optional[LayerAndMaskInfo]
-            image_data=None,  # type: Optional[ImageData]
-            compression=enums.Compression.raw  # type: int
-            ):  # type: (...) -> None
+        self,
+        version=enums.Version.version_1,  # type: int
+        num_channels=1,  # type: int
+        height=1,  # type: int
+        width=1,  # type: int
+        depth=enums.ColorDepth.depth8,  # type: int
+        color_mode=enums.ColorMode.rgb,  # type: int
+        color_mode_data=None,  # type: Optional[ColorModeData]
+        image_resources=None,  # type: Optional[ImageResources]
+        layer_and_mask_info=None,  # type: Optional[LayerAndMaskInfo]
+        image_data=None,  # type: Optional[ImageData]
+        compression=enums.Compression.raw,  # type: int
+    ):  # type: (...) -> None
         Header.__init__(
             self,
             version=version,
@@ -192,7 +214,7 @@ class PsdFile(Header):
             height=height,
             width=width,
             depth=depth,
-            color_mode=color_mode
+            color_mode=color_mode,
         )
 
         if color_mode_data is None:
@@ -211,7 +233,7 @@ class PsdFile(Header):
     @property
     def color_mode_data(self):
         # type: (...) -> ColorModeData
-        'Color mode data section. See `color_mode.ColorModeData`.'
+        "Color mode data section. See `color_mode.ColorModeData`."
         return self._color_mode_data
 
     @color_mode_data.setter
@@ -224,7 +246,7 @@ class PsdFile(Header):
     @property
     def image_resources(self):
         # type: (...) -> ImageResources
-        'Image resources. See `image_resources.ImageResources`.'
+        "Image resources. See `image_resources.ImageResources`."
         return self._image_resources
 
     @image_resources.setter
@@ -237,22 +259,20 @@ class PsdFile(Header):
     @property
     def layer_and_mask_info(self):
         # type: (...) -> LayerAndMaskInfo
-        'Image resources. See `image_resources.ImageResources`.'
+        "Image resources. See `image_resources.ImageResources`."
         return self._layer_and_mask_info
 
     @layer_and_mask_info.setter
     def layer_and_mask_info(self, value):
         # type: (LayerAndMaskInfo) -> None
         if not isinstance(value, LayerAndMaskInfo):
-            raise TypeError(
-                "layer_and_mask_info must be LayerAndMaskInfo instance"
-            )
+            raise TypeError("layer_and_mask_info must be LayerAndMaskInfo instance")
         self._layer_and_mask_info = value
 
     @property
     def image_data(self):
         # type: (...) -> ImageData
-        'Image data. See `image_data.ImageData`.'
+        "Image data. See `image_data.ImageData`."
         return self._image_data
 
     @image_data.setter
@@ -271,6 +291,7 @@ class PsdFile(Header):
         self.layer_and_mask_info = LayerAndMaskInfo.read(fd, self)
         self.image_data = ImageData.read(fd, self)
         return self
+
     read.__func__.__doc__ = docs.read_single
 
     @util.trace_write
@@ -280,4 +301,5 @@ class PsdFile(Header):
         self.image_resources.write(fd, self)
         self.layer_and_mask_info.write(fd, self)
         self.image_data.write(fd, self)
+
     write.__doc__ = docs.write_single

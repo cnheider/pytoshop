@@ -17,10 +17,13 @@ fd : file-like object
 """
 
 
-read = read_single + """
+read = (
+    read_single
+    + """
 header : PsdFile object
     An object to get global file information from.
 """
+)
 
 
 write_single = """
@@ -33,10 +36,13 @@ fd : file-like object
 """
 
 
-write = write_single + """
+write = (
+    write_single
+    + """
 header : PsdFile object
     An object to get global file information from.
 """
+)
 
 
 length = """

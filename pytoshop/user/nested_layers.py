@@ -23,13 +23,23 @@ from .. import tagged_block
 from .. import util
 
 
-from typing import Any, Dict, Generator, List, Optional, Tuple, TYPE_CHECKING, Union  # NOQA
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Tuple,
+    TYPE_CHECKING,
+    Union,
+)  # NOQA
 
 
 class Layer(object):
     """
     Base class of all layers.
     """
+
     @property
     def name(self):  # type: (...) -> unicode
         "The name of the layer"
@@ -39,7 +49,7 @@ class Layer(object):
     def name(self, value):
         # type: (Union[bytes, unicode]) -> None
         if isinstance(value, bytes):
-            value = value.decode('ascii')
+            value = value.decode("ascii")
 
         if not isinstance(value, six.text_type):
             raise TypeError("name must be a Unicode string")
@@ -61,11 +71,8 @@ class Layer(object):
 
     @opacity.setter
     def opacity(self, value):  # type: (int) -> None
-        if (not isinstance(value, int) or
-                value < 0 or value > 255):
-            raise ValueError(
-                "opacity must be an integer in the range 0 to 255"
-            )
+        if not isinstance(value, int) or value < 0 or value > 255:
+            raise ValueError("opacity must be an integer in the range 0 to 255")
         self._opacity = value
 
     @property
@@ -75,11 +82,8 @@ class Layer(object):
 
     @group_id.setter
     def group_id(self, value):  # type: (int) -> None
-        if (not isinstance(value, int) or
-                value < 0 or value > ((1 << 16) - 1)):
-            raise ValueError(
-                "group_id must be a 16-bit unsigned int"
-            )
+        if not isinstance(value, int) or value < 0 or value > ((1 << 16) - 1):
+            raise ValueError("group_id must be a 16-bit unsigned int")
         self._group_id = value
 
     @property
@@ -114,11 +118,8 @@ class Layer(object):
 
     @layer_color.setter
     def layer_color(self, value):  # type: (int) -> None
-        if (not isinstance(value, int) or
-                value < 0 or value > 7):
-            raise ValueError(
-                "Layer color must be in range 0-7"
-            )
+        if not isinstance(value, int) or value < 0 or value > 7:
+            raise ValueError("Layer color must be in range 0-7")
         self._layer_color = value
 
 
@@ -126,17 +127,19 @@ class Group(Layer):
     """
     A `Layer` that may contain other `Layer` instances.
     """
-    def __init__(self,
-                 name='',        # type: unicode
-                 visible=True,   # type: bool
-                 opacity=255,    # type: int
-                 group_id=0,     # type: int
-                 blend_mode=enums.BlendMode.pass_through,  # type: bytes
-                 layers=None,    # type: Optional[List[Layer]]
-                 closed=True,    # type: bool
-                 metadata=None,  # type: Optional[Dict[bytes, bytes]]
-                 layer_color=0   # type: int
-                 ):  # type: (...) -> None
+
+    def __init__(
+        self,
+        name="",  # type: unicode
+        visible=True,  # type: bool
+        opacity=255,  # type: int
+        group_id=0,  # type: int
+        blend_mode=enums.BlendMode.pass_through,  # type: bytes
+        layers=None,  # type: Optional[List[Layer]]
+        closed=True,  # type: bool
+        metadata=None,  # type: Optional[Dict[bytes, bytes]]
+        layer_color=0,  # type: int
+    ):  # type: (...) -> None
         self.name = name
         self.visible = visible
         self.opacity = opacity
@@ -175,21 +178,23 @@ class Image(Layer):
     """
     A `Layer` containing image data, i.e. a leaf node.
     """
-    def __init__(self,
-                 name='',         # type: unicode
-                 visible=True,    # type: bool
-                 opacity=255,     # type: int
-                 group_id=0,      # type: int
-                 blend_mode=enums.BlendMode.normal,  # type: bytes
-                 top=0,           # type: int
-                 left=0,          # type: int
-                 bottom=None,     # type: Optional[int]
-                 right=None,      # type: Optional[int]
-                 channels=None,   # type: Any
-                 metadata=None,   # type: Optional[Dict[bytes, bytes]]
-                 layer_color=0,   # type: int
-                 color_mode=None  # type: Optional[int]
-                 ):  # type: (...) -> None
+
+    def __init__(
+        self,
+        name="",  # type: unicode
+        visible=True,  # type: bool
+        opacity=255,  # type: int
+        group_id=0,  # type: int
+        blend_mode=enums.BlendMode.normal,  # type: bytes
+        top=0,  # type: int
+        left=0,  # type: int
+        bottom=None,  # type: Optional[int]
+        right=None,  # type: Optional[int]
+        channels=None,  # type: Any
+        metadata=None,  # type: Optional[Dict[bytes, bytes]]
+        layer_color=0,  # type: int
+        color_mode=None,  # type: Optional[int]
+    ):  # type: (...) -> None
         self.name = name
         self.visible = visible
         self.opacity = opacity
@@ -267,8 +272,7 @@ class Image(Layer):
 
     @color_mode.setter
     def color_mode(self, value):  # type: (Optional[int]) -> None
-        if (value is not None and
-                value not in list(enums.ColorMode)):  # type: ignore
+        if value is not None and value not in list(enums.ColorMode):  # type: ignore
             raise ValueError("Invalid color mode")
         self._color_mode = value
 
@@ -319,9 +323,7 @@ class Image(Layer):
         channel : 2-D numpy array
         """
         if self._color_mode is None:
-            raise ValueError(
-                "color_mode must be specified to use get_channel"
-            )
+            raise ValueError("color_mode must be specified to use get_channel")
         return util.get_channel(color, self._color_mode, self._channels)
 
     def set_channel(self, color, channel):
@@ -337,12 +339,8 @@ class Image(Layer):
         channel : 2-D numpy array
         """
         if self._color_mode is None:
-            raise ValueError(
-                "color_mode must be specified to use set_channel"
-            )
-        return util.set_channel(
-            color, channel, self._color_mode, self._channels
-        )
+            raise ValueError("color_mode must be specified to use set_channel")
+        return util.set_channel(color, channel, self._color_mode, self._channels)
 
 
 def _iterate_all_images(layers):
@@ -369,12 +367,16 @@ def pprint_layers(layers, indent=0):
     """
     for layer in layers:
         if isinstance(layer, Group):
-            print(('  ' * indent) + '< {}'.format(layer.name))
-            pprint_layers(layer.layers, indent+1)
-            print(('  ' * indent) + '>')
+            print(("  " * indent) + "< {}".format(layer.name))
+            pprint_layers(layer.layers, indent + 1)
+            print(("  " * indent) + ">")
         elif isinstance(layer, Image):
-            print(('  ' * indent) + '< {} ({}, {}, {}, {}) >'.format(
-                layer.name, layer.top, layer.left, layer.bottom, layer.right))
+            print(
+                ("  " * indent)
+                + "< {} ({}, {}, {}, {}) >".format(
+                    layer.name, layer.top, layer.left, layer.bottom, layer.right
+                )
+            )
 
 
 def _fix_user_layer_mask_size(layer, channel):
@@ -386,25 +388,27 @@ def _fix_user_layer_mask_size(layer, channel):
     from .. import layers
 
     def to_slice(rect):
-        return (slice(*[int(x) for x in np.floor(rect[:, 0])]),
-                slice(*[int(x) for x in np.ceil(rect[:, 1])]))
+        return (
+            slice(*[int(x) for x in np.floor(rect[:, 0])]),
+            slice(*[int(x) for x in np.ceil(rect[:, 1])]),
+        )
 
-    main = np.array([[layer.top, layer.left],
-                     [layer.bottom, layer.right]])
-    mask = np.array([[layer.mask.top, layer.mask.left],
-                     [layer.mask.bottom, layer.mask.right]])
+    main = np.array([[layer.top, layer.left], [layer.bottom, layer.right]])
+    mask = np.array(
+        [[layer.mask.top, layer.mask.left], [layer.mask.bottom, layer.mask.right]]
+    )
     rects = np.stack([main, mask])
-    intersection = np.array([
-        np.max(rects[..., 0, :], axis=0),
-        np.min(rects[..., 1, :], axis=0)])
+    intersection = np.array(
+        [np.max(rects[..., 0, :], axis=0), np.min(rects[..., 1, :], axis=0)]
+    )
     intersection_size = intersection[1] - intersection[0]
     channel_image = channel.image
-    new_channel_image = np.full(
-        tuple(main[1] - main[0]), -1, channel_image.dtype)
+    new_channel_image = np.full(tuple(main[1] - main[0]), -1, channel_image.dtype)
     new_channel = layers.ChannelImageData(new_channel_image)
     if not np.any(intersection_size < 0):
         new_channel_image[to_slice(intersection - main[0])] = channel_image[
-            to_slice(intersection - mask[0])]
+            to_slice(intersection - mask[0])
+        ]
     return new_channel
 
 
@@ -428,7 +432,8 @@ def psd_to_nested_layers(psdfile):
         raise TypeError("psdfile must be a pytoshop.core.PsdFile instance")
 
     group_ids_block = psdfile.image_resources.get_block(
-        enums.ImageResourceID.layers_group_info)
+        enums.ImageResourceID.layers_group_info
+    )
     if group_ids_block is not None:
         group_ids = group_ids_block.group_ids  # type: ignore
     else:
@@ -444,20 +449,20 @@ def psd_to_nested_layers(psdfile):
 
         blocks = layer_record.blocks_map
 
-        name = blocks.get(b'luni', layer_record).name  # type: ignore
-        divider = blocks.get(b'lsct', blocks.get(b'lsdk'))  # type: ignore
+        name = blocks.get(b"luni", layer_record).name  # type: ignore
+        divider = blocks.get(b"lsct", blocks.get(b"lsdk"))  # type: ignore
         visible = layer_record.visible
         opacity = layer_record.opacity
         blend_mode = layer_record.blend_mode
-        metadata = blocks.get(b'shmd', None)
+        metadata = blocks.get(b"shmd", None)
         if metadata is None:
             metadata_dict = {}  # type: Dict[bytes, bytes]
         else:
             metadata_dict = metadata.datas  # type: ignore
         extra_args = {}
         if group_ids is not None:
-            extra_args['group_id'] = group_ids[index]
-        layer_color = blocks.get(b'lclr', None)
+            extra_args["group_id"] = group_ids[index]
+        layer_color = blocks.get(b"lclr", None)
         if layer_color is not None:
             layer_color_val = layer_color.color  # type: ignore
         else:
@@ -465,16 +470,17 @@ def psd_to_nested_layers(psdfile):
 
         if divider is not None:
             divider_type = divider.type  # type: ignore
-            if divider_type in (enums.SectionDividerSetting.closed,
-                                enums.SectionDividerSetting.open):
+            if divider_type in (
+                enums.SectionDividerSetting.closed,
+                enums.SectionDividerSetting.open,
+            ):
                 # group begins
                 group = Group(
                     name=name,
                     visible=visible,
                     opacity=opacity,
                     blend_mode=blend_mode,
-                    closed=(
-                        divider_type == enums.SectionDividerSetting.closed),
+                    closed=(divider_type == enums.SectionDividerSetting.closed),
                     metadata=metadata_dict,
                     layer_color=layer_color_val,
                     **extra_args
@@ -511,10 +517,9 @@ def psd_to_nested_layers(psdfile):
 
             channels = dict(layer_record.channels)
             if enums.ChannelId.user_layer_mask in layer_record.channels:
-                channels[enums.ChannelId.user_layer_mask] = \
-                    _fix_user_layer_mask_size(
-                        layer_record,
-                        layer_record.channels[enums.ChannelId.user_layer_mask])
+                channels[enums.ChannelId.user_layer_mask] = _fix_user_layer_mask_size(
+                    layer_record, layer_record.channels[enums.ChannelId.user_layer_mask]
+                )
 
             layer = Image(
                 name=name,
@@ -548,18 +553,14 @@ def _flatten_group(layer, flat_layers, group_ids, compression, vector_mask):
     blocks = [
         tagged_block.UnicodeLayerName(name=layer.name),
         tagged_block.SectionDividerSetting(type=divider_type),
-        tagged_block.LayerId(id=len(flat_layers))
+        tagged_block.LayerId(id=len(flat_layers)),
     ]
 
     if layer.layer_color != 0:
-        blocks.append(
-            tagged_block.LayerColor(layer.layer_color)
-        )
+        blocks.append(tagged_block.LayerColor(layer.layer_color))
 
     if len(layer.metadata):
-        blocks.append(
-            tagged_block.MetadataSetting(layer.metadata)
-        )
+        blocks.append(tagged_block.MetadataSetting(layer.metadata))
 
     flat_layers.append(
         mlayers.LayerRecord(
@@ -568,23 +569,23 @@ def _flatten_group(layer, flat_layers, group_ids, compression, vector_mask):
             opacity=layer.opacity,
             visible=layer.visible,
             blocks=blocks,
-            pixel_data_irrelevant=True
+            pixel_data_irrelevant=True,
         )
     )
 
     group_ids.append(layer.group_id)
 
-    _flatten_layers(
-        layer.layers, flat_layers, group_ids, compression, vector_mask)
+    _flatten_layers(layer.layers, flat_layers, group_ids, compression, vector_mask)
 
     flat_layers.append(
         mlayers.LayerRecord(
             blocks=[
                 tagged_block.SectionDividerSetting(
-                    type=enums.SectionDividerSetting.bounding),
-                tagged_block.LayerNameSource(id=name_source)
+                    type=enums.SectionDividerSetting.bounding
+                ),
+                tagged_block.LayerNameSource(id=name_source),
             ],
-            pixel_data_irrelevant=True
+            pixel_data_irrelevant=True,
         )
     )
 
@@ -599,10 +600,10 @@ def _flatten_image(layer, flat_layers, group_ids, compression, vector_mask):
         if isinstance(im, mlayers.ChannelImageData):
             channels[id] = im
         else:
-            channels[id] = mlayers.ChannelImageData(
-                image=im, compression=compression)
-    if (enums.ChannelId.transparency in channels and
-            np.all(channels[enums.ChannelId.transparency].image == 0)):
+            channels[id] = mlayers.ChannelImageData(image=im, compression=compression)
+    if enums.ChannelId.transparency in channels and np.all(
+        channels[enums.ChannelId.transparency].image == 0
+    ):
         return
 
     blocks = [
@@ -611,9 +612,7 @@ def _flatten_image(layer, flat_layers, group_ids, compression, vector_mask):
     ]
 
     if layer.layer_color != 0:
-        blocks.append(
-            tagged_block.LayerColor(layer.layer_color)
-        )
+        blocks.append(tagged_block.LayerColor(layer.layer_color))
 
     if layer.bottom is None or layer.right is None:
         raise RuntimeError("Internal inconsistency")
@@ -622,21 +621,18 @@ def _flatten_image(layer, flat_layers, group_ids, compression, vector_mask):
         blocks.append(
             tagged_block.VectorMask(
                 path_resource=path.PathResource.from_rect(
-                    layer.top + 5, layer.left + 5,
-                    layer.bottom - 5, layer.right - 5
+                    layer.top + 5, layer.left + 5, layer.bottom - 5, layer.right - 5
                 )
             )
         )
     else:
         if enums.ChannelId.transparency not in channels:
-            channels[enums.ChannelId.transparency] = \
-                mlayers.ChannelImageData(
-                    image=-1, compression=compression)
+            channels[enums.ChannelId.transparency] = mlayers.ChannelImageData(
+                image=-1, compression=compression
+            )
 
     if len(layer.metadata):
-        blocks.append(
-            tagged_block.MetadataSetting(layer.metadata)
-        )
+        blocks.append(tagged_block.MetadataSetting(layer.metadata))
 
     flat_layers.append(
         mlayers.LayerRecord(
@@ -649,7 +645,7 @@ def _flatten_image(layer, flat_layers, group_ids, compression, vector_mask):
             opacity=layer.opacity,
             visible=layer.visible,
             channels=channels,
-            blocks=blocks
+            blocks=blocks,
         )
     )
 
@@ -661,14 +657,10 @@ def _flatten_layers(layers, flat_layers, group_ids, compression, vector_mask):
 
     for layer in layers:
         if isinstance(layer, Group):
-            _flatten_group(
-                layer, flat_layers, group_ids, compression, vector_mask
-            )
+            _flatten_group(layer, flat_layers, group_ids, compression, vector_mask)
 
         elif isinstance(layer, Image):
-            _flatten_image(
-                layer, flat_layers, group_ids, compression, vector_mask
-            )
+            _flatten_image(layer, flat_layers, group_ids, compression, vector_mask)
 
     return flat_layers, group_ids
 
@@ -709,8 +701,7 @@ def _determine_channels_and_depth(layers, depth, color_mode):
 
     num_channels = 0
     for image in _iterate_all_images(layers):
-        if (image.color_mode is not None and
-                image.color_mode != color_mode):
+        if image.color_mode is not None and image.color_mode != color_mode:
             raise ValueError("Mismatched color mode")
         for index, channel in image.channels.items():
             if np.isscalar(channel):
@@ -733,7 +724,7 @@ def _update_sizes(layers):
 
     for image in _iterate_all_images(layers):
         if len(image.channels) == 0:
-            width = 0   # type: Optional[int]
+            width = 0  # type: Optional[int]
             height = 0  # type: Optional[int]
         else:
             if image.bottom is not None and image.top is not None:
@@ -757,9 +748,7 @@ def _update_sizes(layers):
                         "match layer"
                     )
             if height is None or width is None:
-                raise ValueError(
-                    "Can't determine shape.  Set it explicitly."
-                )
+                raise ValueError("Can't determine shape.  Set it explicitly.")
 
         if height is None or width is None:
             raise RuntimeError("Internal inconsistency")
@@ -772,14 +761,14 @@ def _update_sizes(layers):
 
 
 def nested_layers_to_psd(
-        layers,                             # type: List[Layer]
-        color_mode,                         # type: int
-        version=enums.Version.version_1,    # type: int
-        compression=enums.Compression.rle,  # type: int
-        depth=None,                         # type: Optional[int]
-        size=None,                          # type: Optional[Tuple[int, int]]
-        vector_mask=False                   # type: Optional[bool]
-        ):  # type: (...) -> core.PsdFile
+    layers,  # type: List[Layer]
+    color_mode,  # type: int
+    version=enums.Version.version_1,  # type: int
+    compression=enums.Compression.rle,  # type: int
+    depth=None,  # type: Optional[int]
+    size=None,  # type: Optional[Tuple[int, int]]
+    vector_mask=False,  # type: Optional[bool]
+):  # type: (...) -> core.PsdFile
     """
     Convert a hierarchy of nested `Layer` instances to a `PsdFile`.
 
@@ -828,17 +817,14 @@ def nested_layers_to_psd(
 
     _update_sizes(layers)
 
-    num_channels, depth = _determine_channels_and_depth(
-        layers, depth, color_mode
-    )
+    num_channels, depth = _determine_channels_and_depth(layers, depth, color_mode)
 
     if size is None:
         width, height = _adjust_positions(layers)
     else:
         width, height = size
 
-    flat_layers, group_ids = _flatten_layers(
-        layers, [], [], compression, vector_mask)
+    flat_layers, group_ids = _flatten_layers(layers, [], [], compression, vector_mask)
 
     flat_layers = flat_layers[::-1]
     group_ids = group_ids[::-1]
@@ -851,17 +837,12 @@ def nested_layers_to_psd(
         depth=depth,
         color_mode=color_mode,
         layer_and_mask_info=mlayers.LayerAndMaskInfo(
-            layer_info=mlayers.LayerInfo(
-                layer_records=flat_layers
-            )
+            layer_info=mlayers.LayerInfo(layer_records=flat_layers)
         ),
         image_resources=image_resources.ImageResources(
-            blocks=[
-                image_resources.LayersGroupInfo(
-                    group_ids=group_ids)
-            ]
+            blocks=[image_resources.LayersGroupInfo(group_ids=group_ids)]
         ),
-        compression=compression
+        compression=compression,
     )
 
     return f

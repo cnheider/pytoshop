@@ -21,6 +21,7 @@ class Version(enum.IntEnum):
     Version 2 is the large document format "PSB" file which supports
     documents up to 300,000 pixels in any dimension.
     """
+
     version_1 = 1
     version_2 = 2
     psd = 1
@@ -33,6 +34,7 @@ class ColorDepth(enum.IntEnum):
 
     Supported values are 1, 8, 16, and 32.
     """
+
     depth1 = 1
     depth8 = 8
     depth16 = 16
@@ -43,6 +45,7 @@ class ColorMode(enum.IntEnum):
     """
     Color mode.
     """
+
     bitmap = 0
     grayscale = 1
     indexed = 2
@@ -92,6 +95,7 @@ class ColorSpace(enum.IntEnum):
 
     - ``hks``: HKS colors.
     """
+
     rgb = 0
     hsb = 1
     cmyk = 2
@@ -108,34 +112,35 @@ class BlendMode(bytes, enum.Enum):
     """
     Layer blend mode.
     """
-    pass_through = b'pass'
-    normal = b'norm'
-    dissolve = b'diss'
-    darken = b'dark'
-    multiply = b'mul '
-    color_burn = b'idiv'
-    linear_burn = b'lbrn'
-    darker_color = b'dkCl'
-    lighten = b'lite'
-    screen = b'scrn'
-    color_dodge = b'div '
-    linear_dodge = b'lddg'
-    lighter_color = b'lgCl'
-    overlay = b'over'
-    soft_light = b'sLit'
-    hard_light = b'hLit'
-    vivid_light = b'vLit'
-    linear_light = b'lLit'
-    pin_light = b'pLit'
-    hard_mix = b'hMix'
-    difference = b'diff'
-    exclusion = b'smud'
-    subtract = b'fsub'
-    divide = b'fdiv'
-    hue = b'hue '
-    saturation = b'sat '
-    color = b'colr'
-    luminosity = b'lum '
+
+    pass_through = b"pass"
+    normal = b"norm"
+    dissolve = b"diss"
+    darken = b"dark"
+    multiply = b"mul "
+    color_burn = b"idiv"
+    linear_burn = b"lbrn"
+    darker_color = b"dkCl"
+    lighten = b"lite"
+    screen = b"scrn"
+    color_dodge = b"div "
+    linear_dodge = b"lddg"
+    lighter_color = b"lgCl"
+    overlay = b"over"
+    soft_light = b"sLit"
+    hard_light = b"hLit"
+    vivid_light = b"vLit"
+    linear_light = b"lLit"
+    pin_light = b"pLit"
+    hard_mix = b"hMix"
+    difference = b"diff"
+    exclusion = b"smud"
+    subtract = b"fsub"
+    divide = b"fdiv"
+    hue = b"hue "
+    saturation = b"sat "
+    color = b"colr"
+    luminosity = b"lum "
 
 
 class Compression(enum.IntEnum):
@@ -152,6 +157,7 @@ class Compression(enum.IntEnum):
 
     - ``zip_prediction``: Zip (zlib) with prediction.
     """
+
     raw = 0
     rle = 1
     zip = 2
@@ -166,6 +172,7 @@ class LayerMaskKind(enum.IntEnum):
     preferred.  The other are retained for backward compatibility
     only.
     """
+
     color_selected = 0
     color_protected = 1
     use_value_stored_per_layer = 128
@@ -180,6 +187,7 @@ class ChannelId(enum.IntEnum):
     The meaning of the positive numbers depends on the `ColorMode` in
     effect.
     """
+
     bitmap = 0
 
     gray = 0
@@ -209,6 +217,7 @@ class ColorChannel(enum.IntEnum):
     Color channel names, with unique values so we can check that they
     apply to the expected color mode.
     """
+
     bitmap = 0
     gray = 1
     default = 2
@@ -243,7 +252,7 @@ ColorChannelMapping = {
     ColorChannel.b: (ColorMode.lab, ChannelId.b),
     ColorChannel.transparency: (None, ChannelId.transparency),
     ColorChannel.user_layer_mask: (None, ChannelId.user_layer_mask),
-    ColorChannel.real_user_layer_mask: (None, ChannelId.real_user_layer_mask)
+    ColorChannel.real_user_layer_mask: (None, ChannelId.real_user_layer_mask),
 }
 
 
@@ -261,6 +270,7 @@ class SectionDividerSetting(enum.IntEnum):
 
     - ``bounding``: Bounding section divider, hidden in GUI.
     """
+
     any_other = 0
     open = 1
     closed = 2
@@ -283,6 +293,7 @@ class ImageResourceID(enum.IntEnum):
     """
     Ids for Image Resource blocks.
     """
+
     mac_print_info = 1001
     mac_page_format_info = 1002
     resolution_info = 1005

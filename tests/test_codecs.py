@@ -22,9 +22,11 @@ def test_zip_with_prediction(depth):
 
     fd = io.BytesIO()
     codecs.compress_image(
-        fd, x, enums.Compression.zip_prediction, (255, 256), 1, depth, 1)
+        fd, x, enums.Compression.zip_prediction, (255, 256), 1, depth, 1
+    )
     y = codecs.decompress_image(
-        fd.getvalue(), enums.Compression.zip_prediction, (255, 256), depth, 1)
+        fd.getvalue(), enums.Compression.zip_prediction, (255, 256), depth, 1
+    )
 
     assert_array_equal(x, y)
 
@@ -37,10 +39,10 @@ def test_zip(depth):
     x = np.random.randint(0, (2**depth) - 1, size=(255, 256), dtype=dtype)
 
     fd = io.BytesIO()
-    codecs.compress_image(
-        fd, x, enums.Compression.zip, (255, 256), 1, depth, 1)
+    codecs.compress_image(fd, x, enums.Compression.zip, (255, 256), 1, depth, 1)
     y = codecs.decompress_image(
-        fd.getvalue(), enums.Compression.zip, (255, 256), depth, 1)
+        fd.getvalue(), enums.Compression.zip, (255, 256), depth, 1
+    )
 
     assert_array_equal(x, y)
 
@@ -54,10 +56,10 @@ def test_rle(depth, version):
     x = np.random.randint(0, (2**depth) - 1, size=(255, 256), dtype=dtype)
 
     fd = io.BytesIO()
-    codecs.compress_image(
-        fd, x, enums.Compression.rle, (255, 256), 1, depth, version)
+    codecs.compress_image(fd, x, enums.Compression.rle, (255, 256), 1, depth, version)
     y = codecs.decompress_image(
-        fd.getvalue(), enums.Compression.rle, (255, 256), depth, version)
+        fd.getvalue(), enums.Compression.rle, (255, 256), depth, version
+    )
 
     assert_array_equal(x, y)
 
@@ -73,10 +75,10 @@ def test_raw_constant(depth):
     x = np.ones((255, 256), dtype=dtype) * value
 
     fd = io.BytesIO()
-    codecs.compress_image(
-        fd, value, enums.Compression.raw, (255, 256), 1, depth, 1)
+    codecs.compress_image(fd, value, enums.Compression.raw, (255, 256), 1, depth, 1)
     y = codecs.decompress_image(
-        fd.getvalue(), enums.Compression.raw, (255, 256), depth, 1)
+        fd.getvalue(), enums.Compression.raw, (255, 256), depth, 1
+    )
 
     assert_array_equal(x, y)
 
@@ -88,9 +90,11 @@ def test_zip_with_prediction_constant(depth):
 
     fd = io.BytesIO()
     codecs.compress_image(
-        fd, 42, enums.Compression.zip_prediction, (255, 256), 1, depth, 1)
+        fd, 42, enums.Compression.zip_prediction, (255, 256), 1, depth, 1
+    )
     y = codecs.decompress_image(
-        fd.getvalue(), enums.Compression.zip_prediction, (255, 256), depth, 1)
+        fd.getvalue(), enums.Compression.zip_prediction, (255, 256), depth, 1
+    )
 
     assert_array_equal(x, y)
 
@@ -106,10 +110,10 @@ def test_zip_constant(depth):
     x = np.ones((255, 256), dtype=dtype) * value
 
     fd = io.BytesIO()
-    codecs.compress_image(
-        fd, value, enums.Compression.zip, (255, 256), 1, depth, 1)
+    codecs.compress_image(fd, value, enums.Compression.zip, (255, 256), 1, depth, 1)
     y = codecs.decompress_image(
-        fd.getvalue(), enums.Compression.zip, (255, 256), depth, 1)
+        fd.getvalue(), enums.Compression.zip, (255, 256), depth, 1
+    )
 
     assert_array_equal(x, y)
 
@@ -121,9 +125,9 @@ def test_rle_constant(depth, version):
     x = np.ones((255, 256), dtype=dtype) * 42
 
     fd = io.BytesIO()
-    codecs.compress_image(
-        fd, 42, enums.Compression.rle, (255, 256), 1, depth, version)
+    codecs.compress_image(fd, 42, enums.Compression.rle, (255, 256), 1, depth, version)
     y = codecs.decompress_image(
-        fd.getvalue(), enums.Compression.rle, (255, 256), depth, version)
+        fd.getvalue(), enums.Compression.rle, (255, 256), depth, version
+    )
 
     assert_array_equal(x, y)

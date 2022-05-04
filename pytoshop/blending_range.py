@@ -17,6 +17,7 @@ from . import util
 
 
 from typing import BinaryIO, List, Optional, TYPE_CHECKING  # NOQA
+
 if TYPE_CHECKING:
     from . import core  # NOQA
 
@@ -27,19 +28,19 @@ class BlendingRange(object):
 
     Comprises 2 black values and 2 white values.
     """
-    def __init__(self,
-                 black0=0,     # type: int
-                 black1=0,     # type: int
-                 white0=0,     # type: int
-                 white1=0,     # type: int
-                 _values=None  # type: Optional[np.ndarray]
-                 ):  # type: (...) -> None
+
+    def __init__(
+        self,
+        black0=0,  # type: int
+        black1=0,  # type: int
+        white0=0,  # type: int
+        white1=0,  # type: int
+        _values=None,  # type: Optional[np.ndarray]
+    ):  # type: (...) -> None
         if _values is not None:
             self._values = _values
         else:
-            self._values = np.array(
-                [black0, black1, white0, white1],
-                np.uint8)
+            self._values = np.array([black0, black1, white0, white1], np.uint8)
 
     @property
     def black0(self):  # type: (...) -> int
@@ -80,17 +81,17 @@ class BlendingRange(object):
         buf = fd.read(4)
         values = np.frombuffer(buf, np.uint8)
 
-        util.log(
-            "values: {}",
-            values)
+        util.log("values: {}", values)
 
         return cls(_values=values)
+
     read.__func__.__doc__ = docs.read
 
     @util.trace_write
     def write(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
         fd.write(self._values.tobytes())
+
     write.__doc__ = docs.write
 
 
@@ -100,10 +101,12 @@ class BlendingRangePair(object):
 
     The combination of a source and destination blending range.
     """
-    def __init__(self,
-                 src=None,  # type: Optional[BlendingRange]
-                 dst=None   # type: Optional[BlendingRange]
-                 ):  # type: (...) -> None
+
+    def __init__(
+        self,
+        src=None,  # type: Optional[BlendingRange]
+        dst=None,  # type: Optional[BlendingRange]
+    ):  # type: (...) -> None
         if src is None:
             src = BlendingRange()
         if dst is None:
@@ -133,10 +136,12 @@ class BlendingRangePair(object):
 
     def length(self, header):  # type: (core.Header) -> int
         return 8
+
     length.__doc__ = docs.length  # type: ignore
 
     def total_length(self, header):  # type: (core.Header) -> int
         return self.length(header)
+
     total_length.__doc__ = docs.total_length  # type: ignore
 
     @classmethod
@@ -147,6 +152,7 @@ class BlendingRangePair(object):
         dst = BlendingRange.read(fd)
 
         return cls(src=src, dst=dst)
+
     read.__func__.__doc__ = docs.read
 
     @util.trace_write
@@ -154,6 +160,7 @@ class BlendingRangePair(object):
         # type: (BinaryIO, core.Header) -> None
         self.src.write(fd, header)
         self.dst.write(fd, header)
+
     write.__doc__ = docs.write
 
 
@@ -164,11 +171,12 @@ class BlendingRanges(object):
     Consists of a composite gray blend pair followed by N additional
     pairs.
     """
+
     def __init__(
-            self,
-            composite_gray_blend=None,  # type: Optional[BlendingRangePair]
-            channels=None  # type: Optional[List[BlendingRangePair]]
-            ):  # type: (...) -> None
+        self,
+        composite_gray_blend=None,  # type: Optional[BlendingRangePair]
+        channels=None,  # type: Optional[List[BlendingRangePair]]
+    ):  # type: (...) -> None
         self.composite_gray_blend = composite_gray_blend
         if channels is None:
             channels = []
@@ -182,11 +190,9 @@ class BlendingRanges(object):
     @composite_gray_blend.setter
     def composite_gray_blend(self, value):
         # type: (BlendingRangePair) -> None
-        if (value is not None and
-                not isinstance(value, BlendingRangePair)):
+        if value is not None and not isinstance(value, BlendingRangePair):
             raise TypeError(
-                "composite_gray_blend must be None or BlendingRangePair "
-                "instance."
+                "composite_gray_blend must be None or BlendingRangePair " "instance."
             )
         self._composite_gray_blend = value
 
@@ -202,27 +208,28 @@ class BlendingRanges(object):
         self._channels = value
 
     def length(self, header):  # type: (core.Header) -> int
-        if (self.composite_gray_blend is not None or
-                len(self.channels)):
+        if self.composite_gray_blend is not None or len(self.channels):
             if self.composite_gray_blend is None:
                 composite_gray_blend = BlendingRangePair()
             else:
                 composite_gray_blend = self.composite_gray_blend
-            return (
-                composite_gray_blend.total_length(header) +
-                sum(x.total_length(header) for x in self.channels))
+            return composite_gray_blend.total_length(header) + sum(
+                x.total_length(header) for x in self.channels
+            )
         return 0
+
     length.__doc__ = docs.length  # type: ignore
 
     def total_length(self, header):  # type: (core.Header) -> int
         return 4 + self.length(header)
+
     total_length.__doc__ = docs.total_length  # type: ignore
 
     @classmethod
     @util.trace_read
     def read(cls, fd, num_channels):
         # type: (BinaryIO, int) -> BlendingRanges
-        length = util.read_value(fd, 'I')
+        length = util.read_value(fd, "I")
         end = fd.tell() + length
         util.log("length: {}, end: {}", length, end)
         if length == 0:
@@ -235,17 +242,15 @@ class BlendingRanges(object):
 
         fd.seek(end)
 
-        return cls(
-            composite_gray_blend=composite_gray_blend,
-            channels=channels)
+        return cls(composite_gray_blend=composite_gray_blend, channels=channels)
+
     read.__func__.__doc__ = docs.read
 
     @util.trace_write
     def write(self, fd, header):
         # type: (BinaryIO, core.Header) -> None
-        util.write_value(fd, 'I', self.length(header))
-        if (self.composite_gray_blend is not None or
-                len(self.channels)):
+        util.write_value(fd, "I", self.length(header))
+        if self.composite_gray_blend is not None or len(self.channels):
             if self.composite_gray_blend is None:
                 composite_gray_blend = BlendingRangePair()
             else:
@@ -253,4 +258,5 @@ class BlendingRanges(object):
             composite_gray_blend.write(fd, header)
             for channel in self.channels:
                 channel.write(fd, header)
+
     write.__doc__ = docs.write

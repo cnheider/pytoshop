@@ -14,7 +14,7 @@ from pytoshop import enums
 
 class TestHeader(object):
     def test_header(self):
-        content = b'8BPS\0\x02\0\0\0\0\0\0\0\x03\0\0\0\x0F\0\0\0\x0F\0\x08\0\1'
+        content = b"8BPS\0\x02\0\0\0\0\0\0\0\x03\0\0\0\x0F\0\0\0\x0F\0\x08\0\1"
         fd = io.BytesIO(content)
         fd.seek(0)
         h = core.Header.header_read(fd)
@@ -31,28 +31,28 @@ class TestHeader(object):
         assert fd.getvalue() == content
 
     def test_header_invalid_version(self):
-        content = b'8BPS\0\x03\0\0\0\0\0\0\0\x03\0\0\0\x0F\0\0\0\x0F\0\x08\0\1'
+        content = b"8BPS\0\x03\0\0\0\0\0\0\0\x03\0\0\0\x0F\0\0\0\x0F\0\x08\0\1"
         fd = io.BytesIO(content)
         fd.seek(0)
         with pytest.raises(ValueError):
             core.Header.header_read(fd)
 
     def test_header_invalid_signature(self):
-        content = b'8BPX\0\x02\0\0\0\0\0\0\0\x03\0\0\0\x0F\0\0\0\x0F\0\x08\0\1'
+        content = b"8BPX\0\x02\0\0\0\0\0\0\0\x03\0\0\0\x0F\0\0\0\x0F\0\x08\0\1"
         fd = io.BytesIO(content)
         fd.seek(0)
         with pytest.raises(ValueError):
             core.Header.header_read(fd)
 
     def test_header_invalid_width(self):
-        content = b'8BPS\0\x02\0\0\0\0\0\0\0\x03\0\0\0\0\0\0\0\x0F\0\x08\0\1'
+        content = b"8BPS\0\x02\0\0\0\0\0\0\0\x03\0\0\0\0\0\0\0\x0F\0\x08\0\1"
         fd = io.BytesIO(content)
         fd.seek(0)
         with pytest.raises(ValueError):
             core.Header.header_read(fd)
 
     def test_header_invalid_depth(self):
-        content = b'8BPS\0\x02\0\0\0\0\0\0\0\x03\0\0\0\x0F\0\0\0\x0F\0\x09\0\1'
+        content = b"8BPS\0\x02\0\0\0\0\0\0\0\x03\0\0\0\x0F\0\0\0\x0F\0\x09\0\1"
         fd = io.BytesIO(content)
         fd.seek(0)
         with pytest.raises(ValueError):
